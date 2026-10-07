@@ -1,3 +1,4 @@
+import { createFontCache } from './font-cache';
 import { MetricPost } from './metric/MetricPost';
 import { AIVisibilityPost } from './ai-visibility/AIVisibilityPost';
 import { ListItem } from './list/ListItem';
@@ -17,12 +18,9 @@ const root = createRoot(host);
 const listItems = new Map();
 const reports = new Map(), animations = new Map(), logos = new Map();
 const nextPaint = () => new Promise(resolve => requestAnimationFrame(resolve));
-let fontEmbedCSS;
+const embeddedFonts = createFontCache(getFontEmbedCSS);
 async function captureOptions(node) {
-  // The capture document uses one stylesheet/font set for every template.
-  // Reuse embedded fonts rather than fetching and encoding them for every edit.
-  fontEmbedCSS ??= getFontEmbedCSS(node, { preferredFontFormat: 'woff2' }).catch(error => { fontEmbedCSS = undefined; throw error; });
-  return { pixelRatio: 2, fontEmbedCSS: await fontEmbedCSS,
+  return { pixelRatio: 2, fontEmbedCSS: await embeddedFonts(node),
     includeStyleProperties: [...getComputedStyle(node)].filter(name => !name.startsWith('--')) };
 }
 let captureQueue = Promise.resolve();
