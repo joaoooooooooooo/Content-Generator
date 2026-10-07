@@ -1,4 +1,4 @@
-# Motion Studio
+# Moonvine Studio
 
 A **studio for quick videos, GIFs and device mockups** that runs on your own
 machine. Drop in images or video, pick one of **224 motion presets**, tweak live

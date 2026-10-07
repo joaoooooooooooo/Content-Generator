@@ -102,7 +102,7 @@ const DEMOS: Demo[] = [
   {
     def: {
       key: 'caption', label: 'Caption', type: 'text',
-      default: 'Motion Studio', section: 'Finish',
+      default: 'Moonvine Studio', section: 'Finish',
     },
     what: 'A string.',
     how: 'For motions that draw type. Plain and deliberately unstyled: the template decides how the string is rendered, the control only collects it.',

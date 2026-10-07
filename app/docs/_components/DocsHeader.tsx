@@ -31,7 +31,7 @@ export default function DocsHeader({ onSuggest }: { onSuggest: () => void }) {
         <LogoMark height={17} />
         {/* Wrapped so the narrow layout can drop the wordmark and keep the mark:
             measured, the header's content needed 455px in a 375px viewport. */}
-        <span className="docs-brand-name">Motion Studio</span>
+        <span className="docs-brand-name">Moonvine Studio</span>
         <span className="docs-brand-tag">docs</span>
       </Link>
 

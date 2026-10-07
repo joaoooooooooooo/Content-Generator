@@ -1,7 +1,7 @@
 {
-  "name": "motion-studio-open",
+  "name": "moonvine-studio",
   "version": "1.0.0",
-  "description": "Motion Studio — an open-source factory for quick videos and GIFs.",
+  "description": "Moonvine Studio — an open-source factory for quick videos and GIFs.",
   "main": "index.js",
   "scripts": {
     "test:social": "node scripts/verify-social-kpi.cjs && node scripts/verify-channel-thread.cjs && node scripts/verify-word-gather.cjs && node scripts/verify-motion-chip-layers.cjs && node scripts/verify-announce-title.cjs && node scripts/verify-motion-chip-export.cjs",

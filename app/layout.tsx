@@ -11,10 +11,22 @@ export const metadata: Metadata = {
   // Section routes set their own short title ('Mockup', 'Library'…) and the
   // template gives them the product name.
   title: {
-    default: 'motion-studio-open',
-    template: '%s · motion-studio-open',
+    default: 'Moonvine Studio',
+    template: '%s · Moonvine Studio',
   },
-  description: 'motion-studio-open — an open-source factory for quick videos and GIFs.',
+  description: 'Moonvine Studio — an open-source factory for quick videos and GIFs.',
+  applicationName: 'Moonvine Studio',
+  openGraph: {
+    title: 'Moonvine Studio',
+    siteName: 'Moonvine Studio',
+    description: 'Moonvine Studio — an open-source factory for quick videos and GIFs.',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Moonvine Studio',
+    description: 'Moonvine Studio — an open-source factory for quick videos and GIFs.',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
