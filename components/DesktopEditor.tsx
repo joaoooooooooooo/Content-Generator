@@ -1,5 +1,8 @@
 'use client';
 
+import { useSceneStore } from '@/store/useSceneStore';
+import { getTemplate } from '@/templates';
+import SocialExport from './SocialExport';
 import { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import MediaSidebar from '@/components/MediaSidebar';
@@ -44,6 +47,11 @@ export default function DesktopEditor() {
   const toggleRightPanel = useUIStore((s) => s.toggleRightPanel);
   const tplCollapsed = useUIStore((s) => s.tplCollapsed);
   const codeOpen = useWebStore((s) => s.codeOpen);
+  const socialTemplate = useSceneStore((s) => getTemplate(s.activeTemplateId).meta.kind === 'social');
+  const isMotionChip = useSceneStore(s => getTemplate(s.activeTemplateId).meta.group === 'Motion Chips');
+  const socialMotion = useSceneStore((s) => getTemplate(s.activeTemplateId).meta.kind === 'social-motion');
+  const isArtwork = useSceneStore((s) => !!getTemplate(s.activeTemplateId).meta.socialRenderer);
+  const isSocial = nav === 'library' && socialTemplate;
   const is3D = nav === '3d';
   const isMockup = nav === 'mockup';
   const isWeb = nav === 'web';
@@ -96,7 +104,7 @@ export default function DesktopEditor() {
             <>
               <ScenePanel />
               <div className="hairline" />
-              <EffectsPanel />
+              {!isSocial && !isArtwork && <EffectsPanel />}
             </>
           )}
         </section>
@@ -131,13 +139,13 @@ export default function DesktopEditor() {
           <><CanvasPanel is3DMode /><div className="hairline" /><BackgroundFill /></>
         ) : isMockup ? (
           <><CanvasPanel is3DMode /><div className="hairline" /><BackgroundFill hideTexture /></>
-        ) : (
+        ) : isSocial || isArtwork ? <CanvasPanel /> : (
           <MediaSidebar showCanvas />
         )}
       </section>
 
       <footer className="card bottom">
-        <Timeline
+        {isSocial ? <SocialExport /> : <Timeline
           // The bar itself is hidden for the Painted Shader (.app-3d in
           // globals.css) — no export of its own defined yet either.
           showExport={!isWeb && !isBoard && !is3D}
@@ -145,13 +153,13 @@ export default function DesktopEditor() {
           // stack of 2D tracks — their renderer never consumes the Library's
           // motion-track stack, so exposing Add layer here created an
           // invisible parallax track in the wrong document.
-          showLayers={!isMockup && !is3D}
+          showLayers={!isMockup && !is3D && (!socialMotion || isMotionChip)}
           // The Painted Shader is an orbit-controlled still, not a played
           // clip — nothing advances its clock on its own, so a play button
           // and a scrubber for a frame that never moves read as broken.
           showScrubber={!is3D}
           extra={isWeb ? <WebSourceBar /> : isBoard ? <BoardExportBar /> : undefined}
-        />
+        />}
       </footer>
 
       {isWeb && codeOpen && <WebCodeModal />}

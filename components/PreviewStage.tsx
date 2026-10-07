@@ -31,22 +31,22 @@ import { getTemplate } from '@/templates';
 // contexto e comportamento de perda diferem — entao cada engine guarda o SEU
 // canvas junto, e trocar de engine e trocar qual dos dois esta no DOM.
 type Palco = { renderer: IRenderer; canvas: HTMLCanvasElement };
-const palcos = new Map<'pixi' | 'webgl', Palco>();
+const palcos = new Map<'pixi' | 'webgl' | 'social' | 'kpi', Palco>();
 // Criacao em voo, para que duas montagens do mesmo engine compartilhem UMA. Sem
 // isto, o Strict Mode do dev cria dois renderers por montagem e descarta um, e
 // descartar custa uma perda de contexto contada contra a pagina.
-const emCriacao = new Map<'pixi' | 'webgl', Promise<Palco>>();
+const emCriacao = new Map<'pixi' | 'webgl' | 'social' | 'kpi', Promise<Palco>>();
 
-function obterPalco(engine: 'pixi' | 'webgl', canvas: HTMLCanvasElement): Promise<Palco> {
+function obterPalco(engine: 'pixi' | 'webgl' | 'social' | 'kpi', canvas: HTMLCanvasElement): Promise<Palco> {
   const pronto = palcos.get(engine);
   if (pronto) return Promise.resolve(pronto);
   const emVoo = emCriacao.get(engine);
   if (emVoo) return emVoo;
   const p = (async () => {
-    const renderer: IRenderer = engine === 'webgl'
+    const renderer: IRenderer = engine === 'kpi' ? new (await import('@/lib/kpiRenderer')).KpiRenderer() : engine === 'webgl'
       // three stays out of the bundle for 2D-only sessions
       ? new (await import('@/lib/renderer3d')).SceneRenderer3D()
-      : new SceneRenderer();
+      : engine === 'social' ? new (await import('@/lib/socialRenderer')).SocialRenderer() : new SceneRenderer();
     await renderer.init(canvas);
     const entrada: Palco = { renderer, canvas };
     palcos.set(engine, entrada);
@@ -85,11 +85,14 @@ export default function PreviewStage() {
   // 2D `transform`, which every template provides. Otherwise selecting a webgl
   // layer would swap in the single-motion 3D renderer and the other layers would
   // vanish.
-  const engine = useSceneStore((s) =>
-    s.tracks.some((track) => track.visible && getTemplate(track.templateId).meta.engine === 'webgl')
-      ? 'webgl'
-      : 'pixi',
-  );
+  const engine = useSceneStore((s) => {
+    const meta = getTemplate(s.activeTemplateId).meta;
+    // Standalone posts take priority over layers left in the motion composition.
+    if (meta.socialRenderer === 'particles') return 'kpi';
+    if (meta.kind === 'social' || (meta.socialRenderer === 'canvas' && meta.group !== 'Motion Chips')) return 'social';
+    if (meta.kind === 'social-motion' || s.tracks.some(track => track.visible && getTemplate(track.templateId).meta.group === 'Motion Chips')) return 'pixi';
+    return s.tracks.some(track => track.visible && getTemplate(track.templateId).meta.engine === 'webgl') ? 'webgl' : 'pixi';
+  });
 
   useEffect(() => {
     const initGeneration = ++initGenerationRef.current;
@@ -111,15 +114,16 @@ export default function PreviewStage() {
       if (!mounted || initGeneration !== initGenerationRef.current || !rendererRef.current) return;
       const st = useSceneStore.getState();
 
+      const playing = st.playing && getTemplate(st.activeTemplateId).meta.kind !== 'social';
       // freeze/resume card video decoding together with the timeline
-      if (st.playing !== lastPlayingRef.current) {
-        lastPlayingRef.current = st.playing;
-        if (st.playing) rendererRef.current?.resumeVideos?.();
+      if (playing !== lastPlayingRef.current) {
+        lastPlayingRef.current = playing;
+        if (playing) rendererRef.current?.resumeVideos?.();
         else rendererRef.current?.pauseVideos?.();
         dirtyRef.current = true;
       }
 
-      if (st.playing) {
+      if (playing) {
         const now = performance.now();
         if (anchorTimeRef.current === 0) {
           anchorTimeRef.current = now;
@@ -151,7 +155,13 @@ export default function PreviewStage() {
 
     // any store change (control tweak, scrub, asset/effect/bg edit) means the
     // paused preview must redraw once
-    const unsub = useSceneStore.subscribe(() => { dirtyRef.current = true; });
+    const unsub = useSceneStore.subscribe((state, previous) => {
+      dirtyRef.current = true;
+      if (state.duration !== previous.duration || state.fps !== previous.fps) {
+        anchorTimeRef.current = 0;
+        lastRenderedFrameRef.current = null;
+      }
+    });
 
     // Religar o renderer guardado: sem init, sem contexto novo, sem perda.
     const religar = (r: IRenderer) => {

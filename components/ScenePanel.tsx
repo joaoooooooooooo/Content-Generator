@@ -5,7 +5,12 @@ import { useSceneStore } from '@/store/useSceneStore';
 import { catalogTemplateList, getTemplate } from '@/templates';
 import { ControlRow, controlVisible } from './Controls';
 import EasingPanel from './EasingPanel';
+import SocialPhotoControl from './SocialPhotoControl';
+import CopySocialProperties from './CopySocialProperties';
+import KpiControls from './KpiControls';
+import ChannelThreadControls from './ChannelThreadControls';
 import TrackInspector from './TrackInspector';
+import { trackWindow } from '@/lib/tracks';
 import {
   MAX_CAMERA_STOPS, SCENE_CAMERA_STOP_ZOOM,
   SCENE_CAMERA_ON, cameraStopKeys, readSceneCameraPath, sceneCameraControlsFor,
@@ -29,8 +34,13 @@ export default function ScenePanel() {
   const values = useSceneStore((s) => s.values);
   const setValue = useSceneStore((s) => s.setValue);
   const setActiveTemplate = useSceneStore((s) => s.setActiveTemplate);
-  const duration = useSceneStore((s) => s.duration);
-  const setDuration = useSceneStore((s) => s.setDuration);
+  const duration = useSceneStore(s => {
+    const track = s.tracks.find(t => t.id === s.activeTrackId);
+    return s.tracks.length > 1 && track ? trackWindow(track, Math.round(s.duration * s.fps)).length / s.fps : s.duration;
+  });
+  const activeTrackId = useSceneStore(s => s.activeTrackId);
+  const setClipDuration = useSceneStore(s => s.setClipDuration);
+  const setDuration = (seconds: number) => setClipDuration(activeTrackId, seconds);
   const trackCount = useSceneStore((s) => s.tracks.length);
   const activeTrackName = useSceneStore(
     (s) => s.tracks.find((t) => t.id === s.activeTrackId)?.name ?? '',
@@ -142,6 +152,25 @@ export default function ScenePanel() {
   );
 
   const template = getTemplate(activeTemplateId);
+  if (template.meta.kind === 'social' || template.meta.kind === 'social-motion') return (
+    <>
+      <div className="section-head"><span className="eyebrow">Post</span><span className="badge">{template.meta.name}</span></div>
+      <div className="section-body">{activeTemplateId === 'social-channel-thread' ? <ChannelThreadControls /> : <><div className="ctl-section">
+        <div className="ctl-section-title">Post controls</div>
+        {template.controls.filter((def) => controlVisible(def, values) && (activeTemplateId !== 'social-kpi' || (!def.key.includes('.') && def.key !== 'source'))).map((def) => def.type === 'upload'
+          ? <SocialPhotoControl key={def.key} def={def} />
+          : <ControlRow key={def.key} def={def} value={values[def.key] ?? def.default} onChange={(value) => setValue(def.key, value)} />)}
+      </div>{activeTemplateId === 'social-kpi' && <KpiControls />}</>}</div>
+      {template.meta.kind === 'social-motion' && <>
+        <div className="hairline" />
+        <div className="section-head"><span className="eyebrow">Timing</span></div>
+        <div className="section-body"><ControlRow def={{ key: '_duration', label: trackCount > 1 ? 'Clip duration' : 'Duration', type: 'slider', min: 1, max: 60, step: 1, default: 8 }} value={duration} onChange={(v) => setDuration(Number(v))} />{trackCount > 1 && <p className="ctl-hint">Applies to this clip. Set the full scene length in the timeline.</p>}</div>
+        {!template.meta.socialRenderer && <EasingPanel />}
+      </>}
+      {template.meta.group === 'Motion Chips' && <TrackInspector />}
+      <CopySocialProperties key={activeTemplateId} />
+    </>
+  );
   const visibleControls = template.controls.filter((def) => controlVisible(def, values));
   const primaryControls = visibleControls.filter((def) => !def.advanced);
   const advancedControls = visibleControls.filter((def) => def.advanced);
@@ -371,10 +400,11 @@ export default function ScenePanel() {
       <div className="section-head"><span className="eyebrow">Timing</span></div>
       <div className="section-body">
         <ControlRow
-          def={{ key: '_duration', label: 'Duration', type: 'slider', min: 1, max: 60, step: 1, default: 8 }}
+          def={{ key: '_duration', label: trackCount > 1 ? 'Clip duration' : 'Duration', type: 'slider', min: 1, max: 60, step: 1, default: 8 }}
           value={duration}
           onChange={(v) => setDuration(Math.max(1, Number(v)))}
         />
+        {trackCount > 1 && <p className="ctl-hint">Applies to this clip. Set the full scene length in the timeline.</p>}
       </div>
 
       <div className="hairline" />

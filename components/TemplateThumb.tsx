@@ -5,6 +5,7 @@ import type { LayerTransform, Template } from '@/lib/types';
 import { defaultsFor, easingFor, layerCountFor } from '@/templates';
 import { resolveEasing } from '@/lib/easing';
 import dynamic from 'next/dynamic';
+import SocialTemplateThumb from './SocialTemplateThumb';
 
 // The skeleton, also used as the `loading` for the dynamic imports below.
 //
@@ -82,6 +83,7 @@ export default function TemplateThumb({
   // actually fold. Those render with real three, sharing one context across the
   // whole catalogue. Everything else keeps the div path, which is exact for a 2D
   // pose and costs no GPU.
+  if (template.meta.kind === 'social' || template.meta.socialRenderer) return <SocialTemplateThumb template={template} />;
   if (template.meta.engine === 'webgl' && template.transform3d && !no3d) {
     return (
       <TemplateThumb3D

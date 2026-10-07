@@ -21,6 +21,7 @@
 
 import type { EasingSpec } from './easing';
 import { clamp } from './motion';
+import type { MatchCut } from './matchCut';
 
 // Only the blend modes PixiJS v8 supports natively. The advanced set (overlay,
 // hard-light, hue…) needs the separate 'pixi.js/advanced-blend-modes' import
@@ -61,6 +62,7 @@ export interface MotionTrack {
   fade: number;         // frames of auto in/out fade at the window edges
 
   transform: TrackTransform;
+  matchCut?: MatchCut;
 }
 
 export const DEFAULT_TRACK_TRANSFORM: TrackTransform = { x: 0, y: 0, scale: 1, rotation: 0 };

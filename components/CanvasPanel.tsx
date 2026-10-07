@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSceneStore, ASPECTS } from '@/store/useSceneStore';
+import { getTemplate } from '@/templates';
 import { ControlRow } from './Controls';
 import GradientEditor from './GradientEditor';
 import ColorPicker from './ColorPicker';
@@ -52,6 +53,8 @@ export function DimInput({ value, onCommit, min = 16, max = 8192 }: {
 export default function CanvasPanel({ is3DMode = false }: { is3DMode?: boolean } = {}) {
   const aspect = useSceneStore((s) => s.aspect);
   const activeTemplateId = useSceneStore((s) => s.activeTemplateId);
+  const isSocial = !is3DMode && getTemplate(activeTemplateId).meta.kind === 'social';
+  const isSocialMotion = !is3DMode && getTemplate(activeTemplateId).meta.kind === 'social-motion';
   const setAspect = useSceneStore((s) => s.setAspect);
   const customW = useSceneStore((s) => s.customW);
   const customH = useSceneStore((s) => s.customH);
@@ -107,7 +110,7 @@ export default function CanvasPanel({ is3DMode = false }: { is3DMode?: boolean }
           )}
         </div>
 
-        <div className="ctl-section">
+        {!isSocial && <div className="ctl-section">
           <div className="ctl-section-title">Playback & Framing</div>
           <div className="ctl-row">
             <label className="ctl-label">FPS</label>
@@ -126,7 +129,7 @@ export default function CanvasPanel({ is3DMode = false }: { is3DMode?: boolean }
             </div>
           </div>
 
-          {!is3DMode && (
+          {!is3DMode && !isSocialMotion && (
             <div className="ctl-row">
               <label className="ctl-label">Safe area</label>
               <div className="segmented">
@@ -135,9 +138,9 @@ export default function CanvasPanel({ is3DMode = false }: { is3DMode?: boolean }
               </div>
             </div>
           )}
-        </div>
+        </div>}
 
-        {!is3DMode && (
+        {!is3DMode && !isSocial && !isSocialMotion && (
           <div className="ctl-section">
             <div className="ctl-section-title">Background</div>
             {isStickerCanvas && (
@@ -205,7 +208,7 @@ export default function CanvasPanel({ is3DMode = false }: { is3DMode?: boolean }
           </div>
         )}
 
-        {!is3DMode && (
+        {!is3DMode && !isSocial && !isSocialMotion && (
           <div className="ctl-section">
             <div className="ctl-section-title">Overlays</div>
             <div className="ctl-row">

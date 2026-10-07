@@ -29,7 +29,10 @@ function trimTypes(src) {
   return (cut >= 0 ? src.slice(0, cut) : src).trimEnd() + '\n';
 }
 // Editor path aliases → sibling relative imports inside the flat scene/ folder.
-const rel = (s) => s.replace(/@\/lib\//g, './').replace(/@\/templates\//g, './');
+const rel = (s, file = '') => {
+  const prefix = '../'.repeat(file.split('/').length - 1) || './';
+  return s.replace(/@\/lib\//g, prefix).replace(/@\/templates\//g, prefix);
+};
 
 // ---- source map (filename in scene/ → text) ----
 const CORE = ['types', 'easing', 'motion', 'cardPath', 'boardPose', 'boardCompose', 'sceneEngine'];
@@ -38,9 +41,12 @@ files['types.ts'] = trimTypes(read('lib/types.ts'));
 for (const n of CORE.filter((x) => x !== 'types')) files[n + '.ts'] = read('lib/' + n + '.ts');
 files['variant.ts'] = rel(read('templates/variant.ts'));
 
-const tmplFiles = fs.readdirSync(path.join(ROOT, 'templates'))
-  .filter((f) => f.endsWith('.ts') && f !== 'index.ts' && f !== 'variant.ts');
-for (const f of tmplFiles) files[f] = rel(read('templates/' + f));
+const templateFiles = (dir = '') => fs.readdirSync(path.join(ROOT, 'templates', dir), { withFileTypes: true }).flatMap((entry) => {
+  const file = dir ? dir + '/' + entry.name : entry.name;
+  return entry.isDirectory() ? templateFiles(file) : file.endsWith('.ts') && file !== 'index.ts' && file !== 'variant.ts' ? [file] : [];
+});
+const tmplFiles = templateFiles();
+for (const f of tmplFiles) files[f] = rel(read('templates/' + f), f);
 
 // ---- manifest: per template file, which ids + template export names ----
 const safe = (n) => n.replace(/[^a-zA-Z0-9_$]/g, '_');

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { sceneBackgroundAlpha } from '@/lib/chipBackground';
 import { useSceneStore } from '@/store/useSceneStore';
 import { getRendererInstance } from '@/lib/rendererInstance';
 import { BASE_PATH, IS_STATIC_EXPORT } from '@/lib/paths';
@@ -69,7 +70,7 @@ export default function ExportDialog({ onClose }: { onClose: () => void }) {
   const fps = useSceneStore((s) => s.fps);
   const duration = useSceneStore((s) => s.duration);
   const audioUrl = useSceneStore((s) => s.audioUrl);
-  const backgroundAlpha = useSceneStore((s) => s.background.alpha ?? 100);
+  const backgroundAlpha = useSceneStore(sceneBackgroundAlpha);
   const playing = useSceneStore((s) => s.playing);
   const setPlaying = useSceneStore((s) => s.setPlaying);
   const demoSlots = useSceneStore(countDemoSlotsInUse);
@@ -264,6 +265,7 @@ export default function ExportDialog({ onClose }: { onClose: () => void }) {
     const capturePass = async <T,>(encode: () => Promise<T>): Promise<T> => {
       setCaptured(0);
       setPhase('preparing');
+      await renderer.prepareFrame?.();
       await renderer.beginVideoExport?.(); // one forward decode pass for video cards
       setPhase('capturing');
       renderer.setCaptureScale(target.k);  // hi-res backing store; layout untouched
@@ -352,6 +354,7 @@ export default function ExportDialog({ onClose }: { onClose: () => void }) {
 
     try {
       setPhase('preparing');
+      await renderer.prepareFrame?.();
       await renderer.beginVideoExport?.();
       setPhase('capturing');
       const { sessionId } = await post({ action: 'begin' });

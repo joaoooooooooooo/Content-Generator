@@ -1,5 +1,8 @@
 'use client';
 
+import { getTemplate } from '@/templates';
+import SocialExport from './SocialExport';
+import MobileSheet from './MobileSheet';
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import TemplatesCard from './TemplatesCard';
@@ -40,6 +43,8 @@ export default function MobileEditor() {
   const toggleTheme = useUIStore((s) => s.toggleTheme);
   const projects = useProjectStore((s) => s.projects);
   const activeId = useProjectStore((s) => s.activeId);
+  const isSocial = useSceneStore((s) => getTemplate(s.activeTemplateId).meta.kind === 'social');
+  const isArtwork = useSceneStore((s) => !!getTemplate(s.activeTemplateId).meta.socialRenderer);
   const trackCount = useSceneStore((s) => s.tracks.length);
   const [exportOpen, setExportOpen] = useState(false);
   const [desktopNotice, setDesktopNotice] = useState(false);
@@ -86,7 +91,7 @@ export default function MobileEditor() {
         <PreviewStage />
       </main>
 
-      <MobileTransport />
+      {!isSocial && <MobileTransport />}
 
       <section className="mobile-panel" aria-label={`${tab} controls`}>
         <div className="mobile-panel-handle" aria-hidden="true" />
@@ -97,13 +102,13 @@ export default function MobileEditor() {
               onSelect={() => setPanelOpen(false)}
             />
           )}
-          {tab === 'media' && <MediaSidebar />}
+          {tab === 'media' && (isSocial || isArtwork ? <div className="section-body ctl-hint">Edit this post’s text and artwork in Adjust.</div> : <MediaSidebar />)}
           {tab === 'adjust' && (
             <div className="mobile-composed-panel">
               {trackCount > 1 && <div className="mobile-desktop-hint">This project has {trackCount} layers. Manage layers and their timeline on desktop.</div>}
               <ScenePanel />
               <div className="hairline" />
-              <EffectsPanel />
+              {!isSocial && !isArtwork && <EffectsPanel />}
             </div>
           )}
           {tab === 'canvas' && (
@@ -152,7 +157,7 @@ export default function MobileEditor() {
         </div>
       )}
 
-      {exportOpen && <ExportDialog onClose={() => setExportOpen(false)} />}
+      {exportOpen && (isSocial ? <MobileSheet title="Export post" onClose={() => setExportOpen(false)}><SocialExport /></MobileSheet> : <ExportDialog onClose={() => setExportOpen(false)} />)}
     </div>
     </MobileInteractionProvider>
   );

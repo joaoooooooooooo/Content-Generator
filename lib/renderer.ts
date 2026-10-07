@@ -1,4 +1,9 @@
+import { resolveMatchCut } from './matchCut';
+import { sceneBackgroundAlpha } from './chipBackground';
 import * as PIXI from 'pixi.js';
+import { MotionChipLayer } from './motionChipLayer';
+import { SocialMotionHeader } from './socialMotionHeader';
+import { socialPostColors } from '@/templates/social/theme';
 import type { LayerTransform } from '@/lib/types';
 import { getTemplate, layerCountFor } from '@/templates';
 import { getEffect } from '@/effects';
@@ -63,6 +68,7 @@ function taperCorners(w: number, h: number, taper: NonNullable<LayerTransform['t
 // pool and its own container, so tracks composite over each other (container
 // order = stacking order) and can carry independent alpha / blend modes.
 interface TrackRT {
+  chip?: MotionChipLayer;
   container: PIXI.Container;
   slots: Slot[];
   assetSig: string;
@@ -94,6 +100,7 @@ function makePlaceholderTexture(app: PIXI.Application): PIXI.Texture | null {
 export class SceneRenderer {
   app: PIXI.Application;
   onDirty?: () => void;   // preview loop hooks this to redraw once after async loads
+  private postHeader = new SocialMotionHeader();
   private content = new PIXI.Container();       // bg + motion (effects applied here)
   private bg = new PIXI.Graphics();
   private gradientSprite = new PIXI.Sprite();
@@ -157,7 +164,8 @@ export class SceneRenderer {
     this.bgSprite.visible = false;
     this.bgSprite.filters = [this.bgBlur];
     this.content.addChild(this.bg, this.gradientSprite, this.bgSprite, this.motion);
-    this.app.stage.addChild(this.content, this.overlay);
+    this.app.stage.addChild(this.content, this.overlay, this.postHeader.sprite);
+    this.postHeader.onDirty = () => this.onDirty?.();
     this.overlay.addChild(this.safeGfx);
 
     const placeholder = makePlaceholderTexture(this.app);
@@ -254,6 +262,7 @@ export class SceneRenderer {
     // drop runtimes for tracks that no longer exist
     for (const [id, rt] of this.trackRTs) {
       if (!s.tracks.some((t) => t.id === id)) {
+        rt.chip?.destroy();
         rt.container.destroy({ children: true });
         this.trackRTs.delete(id);
       }
@@ -269,7 +278,16 @@ export class SceneRenderer {
         this.trackRTs.set(track.id, rt);
       }
       rt.container.zIndex = order;
-      this.syncTrackSlots(track, rt, s);
+      if (getTemplate(track.templateId).meta.group === 'Motion Chips') {
+        if (!rt.chip) {
+          for (const slot of rt.slots) { slot.mesh?.destroy({ children: true }); slot.sprite.destroy({ children: true }); }
+          rt.slots = []; rt.countSig = -1; rt.assetSig = '';
+          rt.chip = new MotionChipLayer(() => this.onDirty?.()); rt.container.addChild(rt.chip.sprite);
+        }
+      } else {
+        if (rt.chip) { rt.chip.destroy(); rt.chip = undefined; rt.countSig = -1; rt.assetSig = ''; for (const slot of rt.slots) slot.sprite.visible = true; }
+        this.syncTrackSlots(track, rt, s);
+      }
     });
   }
 
@@ -760,7 +778,10 @@ export class SceneRenderer {
     // naturally freezes on its last frame when it ends)
     this.videoEls.forEach((v) => { v.loop = s.videoEnd !== 'hold'; });
     this.syncEffects(frame);
-    this.drawOverlays(s);
+    const socialMotion = s.activeTemplateId === 'social-coverflow-ring';
+    const backdrop = socialMotion ? { ...s, safeArea: false, logo: { ...s.logo, url: null }, background: { ...s.background, source: 'color' as const, color: socialPostColors(s.values.postTheme).background, alpha: 100, gradient: false } } : { ...s, background: { ...s.background, alpha: sceneBackgroundAlpha(s) } };
+    this.drawOverlays(backdrop);
+    this.postHeader.update(socialMotion, s.values, s.width, s.height, this.app.renderer.resolution);
 
     const totalFrames = Math.max(1, Math.round(s.duration * s.fps));
 
@@ -774,7 +795,7 @@ export class SceneRenderer {
     // too. Orbit never arrives in a 2D-only scene — `sceneCameraControlsFor`
     // drops it where there is no perspective to swing.
     const cam = this.sceneCameraFor(s, frame);
-    const shot = sceneCameraPlanar(cam, s.width, s.height);
+    const shot = socialMotion ? { x: s.width / 2, y: s.height / 2, scale: 1 } : sceneCameraPlanar(cam, s.width, s.height);
     this.motion.position.set(shot.x, shot.y);
     this.motion.scale.set(shot.scale);
     // What the camera can actually SEE, in the coordinates templates lay cards
@@ -790,6 +811,7 @@ export class SceneRenderer {
     s.tracks.forEach((track, order) => {
       const rt = this.trackRTs.get(track.id);
       if (!rt) return;
+      if (socialMotion && track.id !== s.activeTrackId) { rt.container.visible = false; return; }
 
       // Map the scene frame onto this track's own window. Outside it, the whole
       // container is hidden — no per-slot work at all.
@@ -797,14 +819,20 @@ export class SceneRenderer {
       if (!time.active) { rt.container.visible = false; return; }
 
       rt.container.visible = true;
-      rt.container.alpha = clamp(track.opacity, 0, 1) * time.envelope;
+      const matched = resolveMatchCut(track, s.tracks, frame, totalFrames, s.width, s.height);
+      rt.container.alpha = clamp(track.opacity, 0, 1) * (matched ? 1 : time.envelope);
       rt.container.blendMode = track.blend;
       // Track-level transform, on top of whatever the template poses.
-      rt.container.position.set(track.transform.x, track.transform.y);
-      rt.container.scale.set(track.transform.scale);
-      rt.container.rotation = (track.transform.rotation * Math.PI) / 180;
+      const pose = matched ?? track.transform;
+      rt.container.position.set(pose.x, pose.y);
+      rt.container.scale.set(pose.scale);
+      rt.container.rotation = (pose.rotation * Math.PI) / 180;
 
       const template = getTemplate(track.templateId);
+      if (rt.chip) {
+        rt.chip.draw(track.templateId, track.values, time.localFrame / s.fps, s.width, s.height, this.app.renderer.resolution, time.localTotal / s.fps);
+        return;
+      }
       const count = rt.slots.length;
 
       // Resolve this track's easing once per frame; shape cyclic phases so each
@@ -880,7 +908,17 @@ export class SceneRenderer {
       }
     });
 
-    this.updateBackground(s, featured);
+    this.updateBackground(backdrop, featured);
+  }
+
+  async prepareFrame() {
+    this.syncAssets();
+    await Promise.all(useSceneStore.getState().tracks.map(track => this.trackRTs.get(track.id)?.chip?.prepare(track.templateId, track.values)));
+    if (getTemplate(useSceneStore.getState().activeTemplateId).meta.kind === 'social-motion') {
+      await this.postHeader.prepare();
+      this.syncAssets();
+      await Promise.all([...this.texturePromises.values()]);
+    }
   }
 
   // ---- video export sync ----
@@ -998,7 +1036,7 @@ export class SceneRenderer {
     this.renderFrame(frame);
     const canvas = this.app.canvas as HTMLCanvasElement;
     const s = useSceneStore.getState();
-    const rawAlpha = s.background.alpha ?? 100;
+    const rawAlpha = sceneBackgroundAlpha(s);
     const alphaPct = (rawAlpha > 0 && rawAlpha <= 1) ? rawAlpha * 100 : rawAlpha;
     if (alphaPct < 100) {
       return canvas?.toDataURL?.('image/png') ?? '';
@@ -1025,6 +1063,8 @@ export class SceneRenderer {
     this.videoEls.forEach((v) => { try { v.pause(); v.removeAttribute('src'); v.load(); } catch { /* noop */ } });
     this.videoEls.clear();
     this.gradientTexture?.destroy(true);
+    this.postHeader.destroy();
+    this.trackRTs.forEach(rt => rt.chip?.destroy());
     this.gradientTexture = null;
     try { this.app.destroy(true, { children: true, texture: false }); } catch { /* noop */ }
   }

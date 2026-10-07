@@ -2,6 +2,7 @@
 // (2D templates) and the Three.js SceneRenderer3D (webgl templates) implement
 // this, so PreviewStage / ExportDialog / rendererInstance are engine-agnostic.
 export interface IRenderer {
+  prepareFrame?(): Promise<void>; // static artwork waits for fonts and images before capture
   init(canvas: HTMLCanvasElement): Promise<void>;
   resize(width: number, height: number, resolution?: number): void;
   // Realize the scene state for a frame (no draw).

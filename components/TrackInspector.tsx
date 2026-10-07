@@ -1,5 +1,6 @@
 'use client';
 
+import { getTemplate } from '@/templates';
 import { useSceneStore } from '@/store/useSceneStore';
 import { BLEND_MODES, trackWindow, type BlendMode } from '@/lib/tracks';
 import { ControlRow } from './Controls';
@@ -99,6 +100,7 @@ export default function TrackInspector() {
 
       <div className="hairline" />
 
+      {getTemplate(track.templateId).meta.group !== 'Motion Chips' && <>
       {/* Splitting the asset list across layers is what turns two animations
           into one scene: layer A drifts the backdrop images, layer B runs the
           foreground carousel. */}
@@ -134,6 +136,7 @@ export default function TrackInspector() {
           </>
         )}
       </div>
+      </>}
     </>
   );
 }

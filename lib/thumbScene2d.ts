@@ -13,6 +13,8 @@
 // moved into whichever card is previewing; idle cards hold a still taken from
 // it. Two contexts total for the whole catalogue (this one and the three one).
 import * as PIXI from 'pixi.js';
+import { SocialMotionHeader } from '@/lib/socialMotionHeader';
+import { socialPostColors } from '@/templates/social/theme';
 import type { LayerTransform, Template } from '@/lib/types';
 import { clamp } from '@/lib/motion';
 import { defaultsFor, easingFor, layerCountFor } from '@/templates';
@@ -42,6 +44,7 @@ interface Shared {
   canvas: HTMLCanvasElement;
   stage: PIXI.Container;
   slots: Slot[];
+  header: SocialMotionHeader;
 }
 
 let shared: Shared | null = null;
@@ -113,10 +116,11 @@ export async function getShared2d(): Promise<Shared> {
     // reads the same as it does on the stage.
     stage.scale.set(THUMB_W / CTX_BASE.width);
     stage.position.set(THUMB_W / 2, THUMB_H / 2);
-    app.stage.addChild(stage);
+    const header = new SocialMotionHeader();
+    app.stage.addChild(stage, header.sprite);
 
     shared = {
-      app, canvas, stage,
+      app, canvas, stage, header,
       slots: [],
     };
     return shared;
@@ -288,12 +292,17 @@ export function renderThumbFrame2d(ctx: Shared, template: Template, frame: numbe
     applyMask(slot, node, texW, texH, radius, taper ? undefined : t.clip);
   });
 
+  const socialMotion = template.meta.kind === 'social-motion';
+  ctx.app.renderer.background.alpha = socialMotion ? 1 : 0;
+  if (socialMotion) ctx.app.renderer.background.color = socialPostColors(v.postTheme).background;
+  ctx.header.update(socialMotion, v, THUMB_W, THUMB_H);
   ctx.app.renderer.render(ctx.app.stage);
 }
 
 /** Draw one frame and read it back as a still, for the idle thumbnail. */
 export async function snapshotThumb2d(template: Template, frame: number): Promise<string | null> {
   const ctx = await getShared2d();
+  if (template.meta.kind === 'social-motion') await ctx.header.prepare();
   // Initialising Pixi is asynchronous. A hover may have claimed the canvas
   // while that await was in flight, so wait again immediately before drawing.
   await waitForThumbQueue();

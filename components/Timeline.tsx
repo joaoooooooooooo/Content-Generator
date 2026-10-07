@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useSceneStore } from '@/store/useSceneStore';
 import ExportDialog from './ExportDialog';
 import TrackLane from './TrackLane';
+import MatchCutPanel from './MatchCutPanel';
 import { AddIcon, ExportIcon, LayersIcon, PauseIcon, PlayIcon } from './EditorIcons';
 
 function fmt(sec: number) {
@@ -88,6 +89,9 @@ export default function Timeline({
   const setFrame = useSceneStore((s) => s.setFrame);
   const setDuration = useSceneStore((s) => s.setDuration);
   const tracks = useSceneStore((s) => s.tracks);
+  const activeTrackId = useSceneStore(s => s.activeTrackId);
+  const activeTrack = tracks.find(t => t.id === activeTrackId);
+  const [transitionOpen, setTransitionOpen] = useState(false);
   const addTrack = useSceneStore((s) => s.addTrack);
   const reorderTracks = useSceneStore((s) => s.reorderTracks);
   const [showExportDialog, setShowExportDialog] = useState(false);
@@ -208,7 +212,7 @@ export default function Timeline({
 
       {showScrubber && (
         <label className="dur-field">
-          <input type="number" min={1} max={60} step={1} value={duration} onChange={(e) => setDuration(Math.max(1, Number(e.target.value)))} />
+          <input aria-label="Timeline duration in seconds" title="Timeline duration" type="number" min={1} step={1} value={duration} onChange={(e) => setDuration(Math.max(1, Number(e.target.value)))} />
           <span>s</span>
         </label>
       )}
@@ -261,12 +265,16 @@ export default function Timeline({
             <AddIcon size={12}/>
             Add layer
           </button>
+          <button type="button" className="tl-add-track" disabled={!activeTrack || tracks.length < 2} aria-expanded={transitionOpen} onClick={() => setTransitionOpen(v => !v)}>
+            {activeTrack?.matchCut ? 'Edit transition' : 'Add transition'}
+          </button>
           <span className="tl-lanes-hint">
             Drag a bar to retime · drag its edges to trim · the arrows change stacking order
           </span>
         </div>
       </div>
     )}
+    {showLayers && lanesOpen && transitionOpen && activeTrack && <MatchCutPanel key={activeTrack.id} track={activeTrack} onClose={() => setTransitionOpen(false)} />}
     </div>
   );
 }

@@ -37,7 +37,7 @@ function renderControl(def: ControlDef, value: any, onChange: (v: any) => void) 
     case 'color': return <ColorControl value={value} onChange={onChange} />;
     case 'xypad': return <XYPadControl def={def} value={value} onChange={onChange} />;
     case 'upload': return <UploadControl value={value} onChange={onChange} />;
-    case 'text': return <TextControl value={value} onChange={onChange} />;
+    case 'text': return <TextControl multiline={def.multiline} label={def.label} value={value} onChange={onChange} />;
     default: return null;
   }
 }
@@ -679,6 +679,7 @@ function UploadControl({ value, onChange }: { value: any; onChange: (v: any) => 
   );
 }
 
-function TextControl({ value, onChange }: { value: any; onChange: (v: any) => void }) {
-  return <input className="field" type="text" value={value ?? ''} onChange={(e) => onChange(e.target.value)} />;
+function TextControl({ multiline, label, value, onChange }: { multiline?: boolean; label: string; value: any; onChange: (v: any) => void }) {
+  if (multiline) return <textarea className="field social-textarea" aria-label={label} rows={5} value={value ?? ''} onChange={(e) => onChange(e.target.value)} />;
+  return <input className="field" aria-label={label} type="text" value={value ?? ''} onChange={(e) => onChange(e.target.value)} />;
 }

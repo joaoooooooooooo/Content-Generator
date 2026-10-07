@@ -1,5 +1,7 @@
 import { create } from 'zustand';
-import { defaultsFor, easingFor, templates } from '@/templates';
+import { fixedClipWindows, resizeClip, clipsEnd } from '@/lib/clipTiming';
+import { connectMatchCut, type MatchCut } from '@/lib/matchCut';
+import { defaultsFor, easingFor, templates, getTemplate } from '@/templates';
 import { carouselReferenceDurations } from '@/templates/carousel';
 import type { EasingSpec } from '@/lib/easing';
 import type { CropFocus } from '@/lib/crop';
@@ -20,6 +22,11 @@ export const ASPECTS: Record<string, [number, number]> = {
   '4:3': [4, 3],
   '16:9': [16, 9],
 };
+
+function previewDims(w: number, h: number) {
+  const k = 1080 / Math.max(w, h);
+  return { width: Math.round(w * k), height: Math.round(h * k) };
+}
 
 const BASE = 1080; // longest edge in export pixels
 export function dimsFor(aspect: string): { width: number; height: number } {
@@ -179,6 +186,7 @@ export interface SceneState {
   toggleTrackVisible: (id: string) => void;
   // Patch any non-motion field of a track (window, blend, opacity, transform…).
   patchTrack: (id: string, patch: Partial<MotionTrack>) => void;
+  setMatchCut: (id: string, config: MatchCut, cut: number) => void;
   setTrackBlend: (id: string, blend: BlendMode) => void;
   toggleTrackAsset: (id: string, assetId: string) => void;
   setFrame: (frame: number) => void;
@@ -187,6 +195,7 @@ export interface SceneState {
   setAspect: (aspect: string) => void;
   setCustomDims: (w: number, h: number) => void;
   setDuration: (d: number) => void;
+  setClipDuration: (id: string, seconds: number) => void;
   toggleSafeArea: () => void;
   setBackground: (patch: Partial<BackgroundSettings>) => void;
   setLogo: (patch: Partial<LogoSettings>) => void;
@@ -530,9 +539,24 @@ export const useSceneStore = create<SceneState>((set, get) => ({
       // new project would look broken.
       const layers = s.tracks.length === 0
         ? (() => { const first = makeTrack(id, 'Layer 1'); return projectActive([first], first.id); })()
-        : withTrack(s, s.activeTrackId, { templateId: id, values: defaultsFor(id), easing: easingFor(id) });
+        : withTrack(s, s.activeTrackId, {
+          templateId: id,
+          values: { ...defaultsFor(id), ...(s.tracks.length > 1 && templates[id]?.meta.group === 'Motion Chips' ? { chipBackground: s.values.chipBackground ?? 'Transparent' } : {}) },
+          easing: easingFor(id),
+          // Picking a standalone preset starts its full loop. A surviving layer
+          // may still carry a shorter trim or retiming from a previous stack.
+          // Keep authored timing when replacing a layer inside a composition.
+          ...(s.tracks.length === 1 ? { inFrame: 0, outFrame: TRACK_END, offset: 0, timeScale: 1, fade: 0 } : {}),
+        });
       return {
         ...layers,
+        ...(s.tracks.length <= 1 && templates[id]?.meta.defaultFps ? { fps: templates[id].meta.defaultFps } : {}),
+        ...(templates[id]?.meta.socialSize && (s.tracks.length <= 1 || templates[id]?.meta.group === 'Social') ? {
+          playing: templates[id].meta.kind === 'social-motion', aspect: 'custom',
+          customW: templates[id].meta.socialSize?.width ?? 1080,
+          customH: templates[id].meta.socialSize?.height ?? 1080,
+          ...previewDims(templates[id].meta.socialSize?.width ?? 1080, templates[id].meta.socialSize?.height ?? 1080),
+        } : {}),
         // These reconstructed families have an intrinsic source ratio, just as
         // their reference presets do. Users can still change it afterwards.
         // Spinner takes 'auto' rather than one ratio for the whole family: the
@@ -545,8 +569,8 @@ export const useSceneStore = create<SceneState>((set, get) => ({
         // Lightroom drums, 9:16 for Bloom 05), and 'auto' is what defers to each
         // template's own declared cardAspect. Any fixed shape here overrides it
         // and every preset comes out the same proportion.
-        cardShape: isSpinnerPreset || isOrbit3dPreset || isArcPreset || isWheelRefPreset ? 'auto' : isStickerPreset ? '1:1' : isPosterPreset ? '4:5' : s.cardShape,
-        duration: isSpinnerPreset ? spinnerDuration : isStickerPreset ? stickerDuration : isPosterPreset ? posterDuration
+        cardShape: templates[id]?.meta.kind === 'social-motion' ? 'auto' : isSpinnerPreset || isOrbit3dPreset || isArcPreset || isWheelRefPreset ? 'auto' : isStickerPreset ? '1:1' : isPosterPreset ? '4:5' : s.cardShape,
+        duration: s.tracks.length > 1 ? s.duration : templates[id]?.meta.kind === 'social-motion' ? (templates[id].meta.defaultDuration ?? 8) : isSpinnerPreset ? spinnerDuration : isStickerPreset ? stickerDuration : isPosterPreset ? posterDuration
           : isPulseRefPreset ? pulseDuration : isFlipPreset ? 12 : isOrbit3dPreset ? orbitDuration
             : isArcPreset ? arcDuration : isWheelRefPreset ? wheelRefDuration
               : isRunwayRefPreset ? runwayRefDuration
@@ -572,15 +596,22 @@ export const useSceneStore = create<SceneState>((set, get) => ({
   // ---- track actions ----
   setActiveTrack: (id) => set((s) => projectActive(s.tracks, id)),
 
-  // New layers start on a template that contrasts with what's already stacked,
-  // so the very first "add layer" reads as two distinct animations rather than
-  // one doubled up. Both ids must be REAL registry ids — getTemplate falls back
-  // to carousel silently, so a typo here would look like a duplicated layer.
+  // Motion Chips append to the sequence. Other motion layers start stacked.
+  // Freeze existing clip ends before growing the scene so adding a layer does
+  // not stretch an animation that was previously tied to the scene duration.
   addTrack: (templateId) =>
     set((s) => {
-      const id = templateId ?? (s.activeTemplateId === 'parallax-01' ? 'carousel' : 'parallax-01');
+      const chipScene = getTemplate(s.activeTemplateId).meta.group === 'Motion Chips';
+      const id = templateId ?? (chipScene ? s.activeTemplateId : s.activeTemplateId === 'parallax-01' ? 'carousel' : 'parallax-01');
       const track = makeTrack(id, `Layer ${s.tracks.length + 1}`);
-      return projectActive([...s.tracks, track], track.id);
+      if (getTemplate(id).meta.group === 'Motion Chips') track.values.chipBackground = 'Transparent';
+      const total = Math.round(s.duration * s.fps);
+      const tracks = fixedClipWindows(s.tracks, total);
+      const active = tracks.find(t => t.id === s.activeTrackId);
+      const length = active ? active.outFrame - active.inFrame : total;
+      track.inFrame = chipScene && getTemplate(id).meta.group === 'Motion Chips' ? clipsEnd(tracks) : 0;
+      track.outFrame = track.inFrame + length;
+      return { ...projectActive([...tracks, track], track.id), duration: Math.max(s.duration, track.outFrame / s.fps) };
     }),
 
   // Duplicate + slip half a window: the copy reads as an echo of the original
@@ -589,17 +620,19 @@ export const useSceneStore = create<SceneState>((set, get) => ({
     set((s) => {
       const i = s.tracks.findIndex((t) => t.id === id);
       if (i < 0) return {};
-      const src = s.tracks[i];
+      const fixed = fixedClipWindows(s.tracks, Math.round(s.duration * s.fps));
+      const src = fixed[i];
       const copy: MotionTrack = {
         ...src,
         id: nid('track'),
         name: `${src.name} copy`,
         values: { ...src.values },
         assetIds: [...src.assetIds],
+        matchCut: undefined,
         transform: { ...src.transform },
         offset: (src.offset + 50) % 100,
       };
-      const tracks = s.tracks.slice();
+      const tracks = fixed.slice();
       tracks.splice(i + 1, 0, copy);
       return projectActive(tracks, copy.id);
     }),
@@ -609,7 +642,7 @@ export const useSceneStore = create<SceneState>((set, get) => ({
   removeTrack: (id) =>
     set((s) => {
       if (s.tracks.length <= 1) return {};
-      const tracks = s.tracks.filter((t) => t.id !== id);
+      const tracks = s.tracks.filter((t) => t.id !== id).map(t => t.matchCut?.targetId === id ? { ...t, matchCut: undefined } : t);
       const nextActive = s.activeTrackId === id ? tracks[tracks.length - 1].id : s.activeTrackId;
       return projectActive(tracks, nextActive);
     }),
@@ -632,7 +665,25 @@ export const useSceneStore = create<SceneState>((set, get) => ({
       return t ? withTrack(s, id, { visible: !t.visible }) : {};
     }),
 
-  patchTrack: (id, patch) => set((s) => withTrack(s, id, patch)),
+  patchTrack: (id, patch) => set((s) => {
+    const previous = s.tracks.find(t => t.id === id);
+    const next = withTrack(s, id, patch);
+    if (!previous) return next;
+    const total = Math.round(s.duration * s.fps);
+    const inChanged = patch.inFrame !== undefined && patch.inFrame !== previous.inFrame;
+    const outChanged = patch.outFrame !== undefined && patch.outFrame !== previous.outFrame;
+    // Trimming a connected edge moves the shared cut. Moving the whole clip
+    // leaves other clips alone; the editor then offers to reconnect the pair.
+    if (outChanged && !inChanged && previous.matchCut) {
+      return projectActive(connectMatchCut(next.tracks, id, previous.matchCut, patch.outFrame!, total), s.activeTrackId);
+    }
+    if (inChanged && !outChanged) {
+      const source = s.tracks.find(t => t.matchCut?.targetId === id);
+      if (source?.matchCut) return projectActive(connectMatchCut(next.tracks, source.id, source.matchCut, patch.inFrame!, total), s.activeTrackId);
+    }
+    return next;
+  }),
+  setMatchCut: (id, config, cut) => set(s => projectActive(connectMatchCut(s.tracks, id, config, cut, Math.round(s.duration * s.fps)), s.activeTrackId)),
 
   setTrackBlend: (id, blend) => set((s) => withTrack(s, id, { blend })),
 
@@ -657,10 +708,17 @@ export const useSceneStore = create<SceneState>((set, get) => ({
   setPlaying: (p) => set(() => ({ playing: p })),
 
   setFps: (fps) => set((s) => {
+    if (!Number.isFinite(fps)) return {};
     const nextFps = Math.max(1, Math.round(fps));
     const currentTime = s.frame / Math.max(1, s.fps);
     const maxFrame = Math.max(0, Math.round(s.duration * nextFps) - 1);
     return {
+      ...projectActive(s.tracks.map(track => ({ ...track,
+        inFrame: Math.round(track.inFrame * nextFps / s.fps),
+        outFrame: track.outFrame === TRACK_END ? TRACK_END : Math.round(track.outFrame * nextFps / s.fps),
+        fade: Math.round(track.fade * nextFps / s.fps),
+        ...(track.matchCut ? { matchCut: { ...track.matchCut, durationFrames: Math.max(2, Math.round(track.matchCut.durationFrames * nextFps / s.fps)) } } : {}),
+      })), s.activeTrackId),
       fps: nextFps,
       frame: Math.min(maxFrame, Math.round(currentTime * nextFps)),
     };
@@ -682,7 +740,40 @@ export const useSceneStore = create<SceneState>((set, get) => ({
         height: Math.max(2, Math.round(ch * k)),
       };
     }),
-  setDuration: (d) => set(() => ({ duration: d })),
+  setClipDuration: (id, seconds) => {
+    if (!Number.isFinite(seconds) || seconds <= 0) return;
+    if (get().tracks.length <= 1) { get().setDuration(seconds); return; }
+    set(s => {
+      const tracks = resizeClip(fixedClipWindows(s.tracks, Math.round(s.duration * s.fps)), id, seconds * s.fps);
+      return { ...projectActive(tracks, s.activeTrackId), duration: Math.max(s.duration, clipsEnd(tracks) / s.fps) };
+    });
+  },
+  setDuration: (d) => set((s) => {
+    if (!Number.isFinite(d) || d <= 0) return {};
+    if (s.tracks.length > 1) {
+      const tracks = fixedClipWindows(s.tracks, Math.round(s.duration * s.fps));
+      const duration = Math.max(d, clipsEnd(tracks) / s.fps);
+      return { ...projectActive(tracks, s.activeTrackId), duration,
+        frame: Math.min(s.frame, Math.max(0, Math.round(duration * s.fps) - 1)) };
+    }
+    const ratio = d / Math.max(1 / s.fps, s.duration);
+    const total = Math.max(1, Math.round(d * s.fps));
+    // Duration stretches the animation, not just the empty timeline around it.
+    // A standalone motion fills the clip. Multi-layer scenes return above.
+    const standaloneMotion = s.tracks.length === 1;
+    const tracks = s.tracks.map(track => ({
+      ...track,
+      inFrame: standaloneMotion ? 0 : Math.round(track.inFrame * ratio),
+      outFrame: standaloneMotion || track.outFrame === TRACK_END ? TRACK_END : Math.round(track.outFrame * ratio),
+      fade: Math.round(track.fade * ratio),
+      ...(track.matchCut ? { matchCut: { ...track.matchCut, durationFrames: Math.max(2, Math.round(track.matchCut.durationFrames * ratio)) } } : {}),
+    }));
+    return {
+      ...projectActive(tracks, s.activeTrackId),
+      duration: d,
+      frame: Math.max(0, Math.min(total - 1, Math.round(s.frame * ratio))),
+    };
+  }),
   toggleSafeArea: () => set((s) => ({ safeArea: !s.safeArea })),
   setBackground: (patch) => set((s) => {
     if (patch.gradientSpec) {
@@ -849,7 +940,8 @@ export const useSceneStore = create<SceneState>((set, get) => ({
       // An explicitly persisted empty list is the intentional blank-project
       // state. Only a non-empty list made invalid by removed templates falls
       // back to the currently loaded scene.
-      const safeTracks = tracks.length > 0 ? tracks : explicitlyBlank ? [] : s.tracks;
+      const loadedTracks = tracks.length > 0 ? tracks : explicitlyBlank ? [] : s.tracks;
+      const safeTracks = loadedTracks.length > 1 ? fixedClipWindows(loadedTracks, Math.round((partial.duration ?? s.duration) * (partial.fps ?? s.fps))) : loadedTracks;
       const activeId = safeTracks.length === 0
         ? ''
         : safeTracks.some((t) => t.id === partial.activeTrackId)

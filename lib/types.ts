@@ -22,6 +22,7 @@ export interface ControlDef {
   section?: 'Layout' | 'Motion' | 'Depth' | 'Finish';
   unit?: '°' | '%' | 'px' | '×' | 's' | '';
   description?: string;
+  multiline?: boolean; // text controls
   precision?: number;
   visibleWhen?: { key: string; equals?: any; not?: any };
   advanced?: boolean;
@@ -156,6 +157,11 @@ export interface CameraPose {
 export interface Template {
   meta: {
     id: string; name: string; group: string; thumbnail?: string;
+    kind?: 'motion' | 'social' | 'social-motion'; // Existing templates default to motion.
+    socialSize?: { width: number; height: number }; // authored post size in export pixels
+    socialRenderer?: 'canvas' | 'particles'; // self-contained animated artwork, without media layers
+    defaultDuration?: number;
+    defaultFps?: number;
     defaultEasing?: EasingSpec;               // curve the template ships with
     isNew?: boolean;                          // shows a NEW badge on the template card
     repeatAssets?: boolean;                   // slot i shows asset i % assets.length (high-count fields)

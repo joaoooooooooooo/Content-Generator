@@ -3,6 +3,7 @@
 import { useMemo, useRef } from 'react';
 import { useSceneStore } from '@/store/useSceneStore';
 import { templateList } from '@/templates';
+import { matchCutWindow } from '@/lib/matchCut';
 import { trackWindow, type MotionTrack } from '@/lib/tracks';
 import { ChevronDownIcon, ChevronUpIcon, DuplicateIcon, EyeIcon, EyeOffIcon, TrashIcon } from './EditorIcons';
 
@@ -25,7 +26,15 @@ export default function TrackLane({
   const patchTrack = useSceneStore((s) => s.patchTrack);
   const duplicateTrack = useSceneStore((s) => s.duplicateTrack);
   const removeTrack = useSceneStore((s) => s.removeTrack);
-  const trackCount = useSceneStore((s) => s.tracks.length);
+  const tracks = useSceneStore(s => s.tracks);
+  const trackCount = tracks.length;
+  const cuts = tracks.flatMap(source => {
+    const target = tracks.find(t => t.id === source.matchCut?.targetId);
+    const range = target && matchCutWindow(source, target, totalFrames);
+    if (!range || (source.id !== track.id && target.id !== track.id)) return [];
+    const incoming = target.id === track.id;
+    return [{ start: incoming ? range.cut : range.start, end: incoming ? range.end : range.cut, incoming }];
+  });
 
   const barsRef = useRef<HTMLDivElement>(null);
   // Drag state lives in a ref: a pointer drag must not re-render per move, and
@@ -139,6 +148,7 @@ export default function TrackLane({
       </div>
 
       <div className="tl-lane-bars" ref={barsRef}>
+        {cuts.map(cut => <span key={cut.incoming ? 'in' : 'out'} className="tl-match-range" title={`Match cut ${cut.incoming ? 'in' : 'out'}`} style={{ left: `${cut.start / totalFrames * 100}%`, width: `${(cut.end - cut.start) / totalFrames * 100}%` }} />)}
         <div
           className="tl-bar"
           style={{ left: `${leftPct}%`, width: `${widthPct}%` }}

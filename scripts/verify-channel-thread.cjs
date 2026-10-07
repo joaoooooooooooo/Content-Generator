@@ -1,0 +1,42 @@
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const Module = require('node:module');
+require('sucrase/register');
+const resolve = Module._resolveFilename;
+Module._resolveFilename = function(request, parent, ...rest) {
+  return resolve.call(this, request.startsWith('@/') ? path.join(__dirname, '..', request.slice(2)) : request, parent, ...rest);
+};
+const { defaultsFor, getTemplate } = require('../templates');
+const { threadLayout, threadMessages, scrollAt, read, SCROLL, FADE } = require('../templates/social/channel-thread/model');
+const { useSceneStore } = require('../store/useSceneStore');
+const values = defaultsFor('social-channel-thread');
+const lines = threadLayout(values);
+const near = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-8, `${actual} != ${expected}`);
+assert.deepEqual(lines.map(l => l.head), [true, false, true, false]);
+assert.deepEqual(lines.map(l => l.at), [0, 0.4, 2, 2.8]);
+assert.deepEqual(lines.map(l => l.opens), [0, 0.4, 37 / 30, 2.4]);
+[158.9, 204.91, 311.5, 357.51].forEach((y, i) => near(lines[i].y, y));
+near(scrollAt(lines, 0.5, values), 0); near(scrollAt(lines, 1.2, values), 0);
+near(scrollAt(lines, 10, values), 138.03);
+near(scrollAt(lines, 1.5, values), scrollAt(lines, 1.5, values));
+assert.ok(scrollAt(lines, 1.5, values) > 0);
+assert.equal(scrollAt(lines, 10, { ...values, autoScroll: 'Off' }), 0);
+assert.equal(read(SCROLL, -1), 0); assert.equal(read(SCROLL, 2), 1);
+assert.equal(read(FADE, -100), 0.098); assert.equal(read(FADE, 400), 1);
+assert.equal(threadLayout({ ...values, 'message2.author': 'another person' })[1].head, true);
+assert.equal(threadLayout({ ...values, 'message2.timestamp': 'Later' })[1].head, true);
+assert.equal(threadLayout({ ...values, 'message2.avatar': '' })[1].head, true);
+assert.equal(threadLayout({ ...values, 'message2.text': '   ' }).length, 3);
+const edited = threadMessages({ ...values, 'message2.at': 5, 'message2.opens': 8, 'message3.at': 1, 'message4.opens': -4 });
+for (let i = 0; i < edited.length; i++) {
+  assert.ok(edited[i].opens <= edited[i].at);
+  assert.ok(edited[i].opens >= (edited[i - 1]?.at ?? 0));
+}
+useSceneStore.getState().setActiveTemplate('social-channel-thread');
+assert.equal(useSceneStore.getState().duration, 4);
+assert.equal(useSceneStore.getState().customW, 1280);
+assert.equal(useSceneStore.getState().customH, 720);
+assert.equal(getTemplate('social-channel-thread').meta.socialRenderer, 'canvas');
+useSceneStore.getState().setActiveTemplate('social-kpi');
+assert.equal(useSceneStore.getState().duration, 8);
+console.log('Channel Thread: reference geometry, grouping, timing, stationary holds, scroll, fade, normalization and template selection passed.');

@@ -1,3 +1,5 @@
+import { announceTitle } from './motion-chips/announce-title';
+import { socialTest, socialTestimonial, socialCoverflowRing, socialKpi, socialChannelThread, socialWordGather } from './social';
 import type { Template } from '@/lib/types';
 import { DEFAULT_EASING, type EasingSpec } from '@/lib/easing';
 import { carousel, carouselVariants, carouselRefVariants } from './carousel';
@@ -72,6 +74,13 @@ const perspective3dTemplates: Template[] = [
 
 // Order follows the reference catalogue's sidebar.
 export const templateList: Template[] = [
+  socialTest,
+  socialTestimonial,
+  socialCoverflowRing,
+  socialKpi,
+  socialChannelThread,
+  socialWordGather,
+  announceTitle,
   ...perspective3dTemplates,
   ...interactiveCardsVariants,
   ...spinnerVariants,

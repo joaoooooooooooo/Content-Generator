@@ -157,6 +157,7 @@ export default function EasingCurveEditor({
           <input
             key={i}
             className="ez-num"
+            aria-label={`Curve control point ${i < 2 ? 1 : 2}, ${i % 2 === 0 ? 'X' : 'Y'}`}
             type="number"
             step={0.01}
             value={bezier ? bezier[i].toFixed(2) : ''}

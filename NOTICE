@@ -134,3 +134,14 @@ FONTS AND ASSETS
 Geist and Geist Mono are served through next/font. The bundled demo images under
 public/demo-ref are used for preview purposes only and are not covered by this
 project's licence.
+
+Channel Thread adapts the MIT-licensed SnapCN component by Sri Nath (2026).
+Source: https://snapcn.dev/docs/social/channel-thread
+The copyright and MIT permission notice are preserved in
+templates/social/channel-thread/LICENSE.snapcn.txt. The default sample avatars
+come from SnapCN's public avatar collection. Barlow is bundled under the SIL
+Open Font License; see public/social/channel-thread/Barlow-OFL.txt.
+
+Word Gather adapts SnapCN (https://snapcn.dev/docs/text/word-gather), copyright 2026 Sri Nath, MIT. See templates/social/word-gather/LICENSE.snapcn.txt. Figtree is distributed under the SIL Open Font License; see public/social/word-gather/OFL.txt.
+
+Announce Title adapts SnapCN (https://snapcn.dev/docs/scenes/announce-title), copyright 2026 Sri Nath, MIT. See templates/motion-chips/announce-title/LICENSE.snapcn.txt. Google Sans is bundled under the SIL Open Font License in public/motion-chips/announce-title/OFL.txt.
