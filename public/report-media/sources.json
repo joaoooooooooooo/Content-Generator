@@ -1,0 +1,64 @@
+[
+  {
+    "id": "apta-0",
+    "entity": "apta",
+    "image": "https://media.licdn.com/dms/image/v2/D4D22AQGT8piWgTEicA/feedshare-shrink_1280/B4DaCqsIWeHwAM-/0/1789570090644?e=2147483647&v=beta&t=QShuKG9Dl6TS6YsQG-CTVBM2r9g2ta9-9tVnU_ek7sA",
+    "href": "https://www.linkedin.com/posts/aptaagency_framer-or-webflow-the-question-every-new-activity-7506000995005476864-sw5s",
+    "publishedAt": "2026-09-16",
+    "localPath": "/report-media/apta-0.jpg"
+  },
+  {
+    "id": "apta-3",
+    "entity": "apta",
+    "href": "https://www.linkedin.com/posts/aptaagency_when-someone-on-your-team-is-out-the-deadline-activity-7503452969644806144--9nD",
+    "publishedAt": "2026-09-09T14:03:15.338Z",
+    "image": "https://media.licdn.com/dms/image/v2/D4D22AQGR5qPXKSGjaw/feedshare-shrink_1280/B4DaCGetzpHcAM-/0/1788962594338?e=2147483647&v=beta&t=MOWO7Gt5u3VFnaciTjR9zsoB_-9ZKcw-XzJP3cuS5xU",
+    "localPath": "/report-media/apta-3.jpg"
+  },
+  {
+    "id": "apta-7",
+    "entity": "apta",
+    "href": "https://www.linkedin.com/posts/aptaagency_how-we-built-100-pages-for-sensedia-in-8-activity-7501263059257135104-gZf5",
+    "publishedAt": "2026-09-03T13:01:19.986Z",
+    "image": "https://media.licdn.com/dms/image/v2/D4D22AQHcvf3atCBUOw/feedshare-shrink_1280/B4DaBnW_5iGYAQ-/0/1788440477581?e=2147483647&v=beta&t=MOCqDMqxTgxjmI8OV9xfnsJ3sLBpTJhT_EooormwRWM",
+    "localPath": "/report-media/apta-7.jpg"
+  },
+  {
+    "id": "superside-1",
+    "entity": "superside",
+    "href": "https://www.linkedin.com/posts/superside_before-the-keynotes-and-the-crowds-were-activity-7503842167623413760-gK-a",
+    "publishedAt": "2026-09-10T15:49:47.405Z",
+    "image": "https://media.licdn.com/dms/image/v2/D4E22AQEAPCUKNzZelw/feedshare-shrink_800/B4EaCMAr6ZJ0Ac-/0/1789055385555?e=2147483647&v=beta&t=w_kyam4XL97TCOXdjJOvT9-45g21mPMfBNTwNHjTNAg",
+    "localPath": "/report-media/superside-1.jpg"
+  },
+  {
+    "id": "superside-2",
+    "entity": "superside",
+    "href": "https://www.linkedin.com/posts/superside_sorry-to-be-the-ones-to-say-it-but-the-way-activity-7503490310656704512-9nbw",
+    "publishedAt": "2026-09-09T16:31:38.167Z",
+    "image": "https://media.licdn.com/dms/image/v2/D4E22AQEvx4dNvHDgUQ/feedshare-shrink_1280/B4EaCHArRxKgAQ-/0/1788971496925?e=2147483647&v=beta&t=NQKXXWREVWyRVQBX0CZb1eUO8_pO67SYa_DzP4a86Lo",
+    "localPath": "/report-media/superside-2.jpg"
+  },
+  {
+    "id": "superside-4",
+    "entity": "superside",
+    "href": "https://www.linkedin.com/posts/superside_were-showing-you-how-we-do-it-really-activity-7500568162845999104-G0P4",
+    "publishedAt": "2026-09-01T15:00:03.839Z",
+    "image": "https://media.licdn.com/dms/image/v2/D4D22AQGDNS8kW01HTQ/feedshare-shrink_1280/B4DaBc.2M4I8AM-/0/1788266374404?e=2147483647&v=beta&t=OE6imiOZXRYXYHYJzgqXgPhw5LkHb1T4oysGBDEaWyo",
+    "localPath": "/report-media/superside-4.jpg"
+  },
+  {
+    "id": "superside-creative",
+    "href": "https://www.superside.com/blog/what-great-creative-looks-like-beyond-the-ai-hype",
+    "image": "https://cdn.sanity.io/images/k0dlbavy/production/0839742f5a7c78a766eddc8bab2a059340bf432c-1000x563.png",
+    "publishedAt": "2026-05-12",
+    "localPath": "/report-media/superside-creative.png"
+  },
+  {
+    "id": "superside-trends",
+    "href": "https://www.superside.com/blog/advertising-creative-trends",
+    "image": "https://cdn.sanity.io/images/k0dlbavy/production/25606ba16451e8bbdc22e2e878987d4322bdbe62-2800x1450.webp",
+    "publishedAt": "2025-12-15",
+    "localPath": "/report-media/superside-trends.webp"
+  }
+]

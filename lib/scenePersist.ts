@@ -1,3 +1,4 @@
+import { carouselSlides } from './carouselSlides';
 import { useSceneStore, type SceneState } from '@/store/useSceneStore';
 import { writeProjectScene } from './projects';
 import { markPending, markSaved, markSettled } from './saveStatus';
@@ -23,6 +24,8 @@ export function buildScenePartial(s: SceneState) {
     // activeTemplateId/values/easing triple below is the active track's
     // projection, kept for scenes saved before tracks existed (hydrate folds a
     // trackless save back into a single track).
+    carouselSlides: s.carouselSlides.length ? carouselSlides(s) : [],
+    activeSlideId: s.activeSlideId,
     tracks: s.tracks,
     activeTrackId: s.activeTrackId,
     activeTemplateId: s.activeTemplateId,
@@ -134,7 +137,7 @@ export function startSceneAutosave(): () => void {
 // document — and the clock (frame/playing), which is not in the partial at all,
 // can never look like one.
 const DOC_KEYS = [
-  'tracks', 'activeTrackId', 'activeTemplateId', 'values', 'easing', 'fps', 'duration',
+  'carouselSlides', 'activeSlideId', 'tracks', 'activeTrackId', 'activeTemplateId', 'values', 'easing', 'fps', 'duration',
   'aspect', 'width', 'height', 'customW', 'customH', 'safeArea', 'background', 'logo',
   'cardShape', 'sceneCamera', 'videoEnd', 'effects', 'assets',
 ] as const satisfies readonly (keyof SceneState)[];

@@ -17,6 +17,7 @@ export interface ControlDef {
   label: string;               // shown in panel
   type: ControlType;
   min?: number; max?: number; step?: number;  // slider
+  optionLabels?: Record<string, string>; // readable labels for stable option IDs
   options?: string[];          // pills / select / toggle
   default: number | string | boolean | { x: number; y: number };
   section?: 'Layout' | 'Motion' | 'Depth' | 'Finish';

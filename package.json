@@ -12,7 +12,12 @@
     "start": "next start",
     "start:network": "next start -H 0.0.0.0",
     "check:upstream": "node scripts/verify-fork-only.cjs",
-    "test:transitions": "node scripts/verify-match-cut.cjs"
+    "test:transitions": "node scripts/verify-match-cut.cjs",
+    "build:brand-tools": "vite build --config brand-tools/vite.config.mjs",
+    "predev": "npm run build:brand-tools",
+    "predev:network": "npm run build:brand-tools",
+    "prebuild": "npm run build:brand-tools",
+    "test:brand-tools": "node scripts/verify-brand-tools.cjs && node scripts/verify-citation-runtime.cjs"
   },
   "keywords": [],
   "author": "",
@@ -38,7 +43,18 @@
     "sucrase": "^3.35.1",
     "three": "^0.185.1",
     "use-sync-external-store": "^1.5.0",
-    "zustand": "^5.0.14"
+    "zustand": "^5.0.14",
+    "@base-ui/react": "^1.7.0",
+    "@phosphor-icons/react": "^2.1.10",
+    "@rive-app/react-webgl2": "^4.32.1",
+    "@tanstack/react-table": "^8.21.3",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "echarts": "^6.1.0",
+    "html-to-image": "^1.11.13",
+    "motion": "^13.1.0",
+    "tailwind-merge": "^3.6.0",
+    "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
     "@gltf-transform/cli": "^4.5.0",
@@ -46,10 +62,14 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@types/three": "^0.185.1",
+    "agentation": "^3.1.2",
     "esbuild": "^0.28.2",
     "playwright-core": "^1.61.1",
     "puppeteer-core": "^25.3.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vite": "^8.2.0",
+    "@vitejs/plugin-react": "^6.0.4",
+    "@tailwindcss/vite": "^4.3.3"
   },
   "allowScripts": {
     "sharp@0.34.5": true

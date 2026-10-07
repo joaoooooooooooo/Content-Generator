@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import AppTour from '@/components/AppTour';
 import { StrataLoader } from '@/components/StrataLoader';
 import WelcomeDialog from '@/components/WelcomeDialog';
-import { modeForSection, sectionFromPathname } from '@/lib/navSections';
+import { modeForSection, sectionFromPathname, VISIBLE_NAV_SECTIONS } from '@/lib/navSections';
 import { capturePoster } from '@/lib/projectPoster';
 import { flushScene, startSceneAutosave } from '@/lib/scenePersist';
 import { flushThreeD, startThreeDAutosave } from '@/lib/three3dPersist';
@@ -150,7 +150,7 @@ export default function EditorShell({ children }: { children?: React.ReactNode }
   // ~13 MB). Parse the most recent Mockup project's device during an idle turn
   // in the other sections, so Library → Mockup only has to clone/setup it.
   useEffect(() => {
-    if (!projectsBooted || section === 'mockup') return;
+    if (!projectsBooted || section === 'mockup' || !VISIBLE_NAV_SECTIONS.some(item => item.id === 'mockup')) return;
     const mockup = projects.find((project) => project.mode === 'mockup');
     const run = () => { void preloadMockupProject(mockup?.id); };
     const idleWindow = window as Window & {

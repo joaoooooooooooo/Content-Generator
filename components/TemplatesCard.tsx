@@ -122,6 +122,7 @@ export default function TemplatesCard({
   // Mobile deliberately exposes only the template catalogue. Keeping this as
   // a derived value prevents custom state from leaking in if the prop changes.
   const activeTab = customPresetsEnabled ? tab : 'templates';
+  const visibleCustomPresets = customPresets.filter(p => catalogById.has(p.templateId));
 
   const activeMeta = templateList.find((t) => t.meta.id === activeTemplateId)?.meta;
 
@@ -181,11 +182,11 @@ export default function TemplatesCard({
 
       <div className="tpl-list">
         {activeTab === 'custom' ? (
-          customPresets.length === 0 ? (
-            <div className="tpl-group-label">No composes yet — set up a scene, give it a camera, and save it here</div>
+          visibleCustomPresets.length === 0 ? (
+            <div className="tpl-group-label">No saved posts yet — customize a template and save it here</div>
           ) : (
             <div className="tpl-grid">
-              {customPresets.map((p) => {
+              {visibleCustomPresets.map((p) => {
                 const base = templateList.find((t) => t.meta.id === p.templateId);
                 return (
                   <div

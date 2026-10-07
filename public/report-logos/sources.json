@@ -1,0 +1,116 @@
+[
+  {
+    "name": "apta",
+    "url": "https://media.licdn.com/dms/image/v2/D4D0BAQH22ancsZGS7A/company-logo_200_200/B4DZiksenGGkAI-/0/1755109780313/aptaagency_logo?e=2147483647&v=beta&t=JuCp2J0tzKfXsjV-icHPuK15JAzrCRAOPqLJRciHo_c",
+    "file": "apta.jpg"
+  },
+  {
+    "name": "superside",
+    "url": "https://media.licdn.com/dms/image/v2/D560BAQFq8XzRWA0wng/company-logo_200_200/company-logo_200_200/0/1732745629242/superside_logo?e=2147483647&v=beta&t=nRSrNPpuoZKGP5OsUcdyHtilCgR41y2l02hxvDN3mkw",
+    "file": "superside.jpg"
+  },
+  {
+    "name": "curio",
+    "url": "https://www.google.com/s2/favicons?domain=curiodigital.io&sz=128",
+    "file": "curio.jpg"
+  },
+  {
+    "name": "hlabs",
+    "url": "https://www.google.com/s2/favicons?domain=hlabs.co.uk&sz=128",
+    "file": "hlabs.png"
+  },
+  {
+    "name": "designstudio",
+    "url": "https://www.google.com/s2/favicons?domain=designstudio.com&sz=128",
+    "file": "designstudio.png"
+  },
+  {
+    "name": "analytics",
+    "url": "https://www.gstatic.com/images/branding/productlogos/google_analytics/v6/192px.svg",
+    "file": "analytics.svg"
+  },
+  {
+    "name": "search-console",
+    "url": "https://www.gstatic.com/search-console/scfe/favicon.png",
+    "file": "search-console.png"
+  },
+  {
+    "name": "linkedin",
+    "url": "https://www.google.com/s2/favicons?domain=linkedin.com&sz=128",
+    "file": "linkedin.png"
+  },
+  {
+    "name": "instagram",
+    "url": "https://www.google.com/s2/favicons?domain=instagram.com&sz=128",
+    "file": "instagram.png"
+  },
+  {
+    "name": "youtube",
+    "url": "https://www.google.com/s2/favicons?domain=youtube.com&sz=128",
+    "file": "youtube.png"
+  },
+  {
+    "name": "hubspot",
+    "url": "https://www.google.com/s2/favicons?domain=hubspot.com&sz=128",
+    "file": "hubspot.png"
+  },
+  {
+    "name": "google-ads",
+    "url": "https://www.gstatic.com/images/branding/productlogos/ads/v5/192px.svg",
+    "file": "google-ads.svg"
+  },
+  {
+    "name": "instrument",
+    "url": "https://www.google.com/s2/favicons?domain=instrument.com&sz=128",
+    "website": "https://instrument.com",
+    "file": "instrument.png"
+  },
+  {
+    "name": "collins",
+    "url": "https://www.google.com/s2/favicons?domain=wearecollins.com&sz=128",
+    "website": "https://wearecollins.com",
+    "file": "collins.png"
+  },
+  {
+    "name": "workco",
+    "url": "https://www.google.com/s2/favicons?domain=work.co&sz=128",
+    "website": "https://work.co",
+    "file": "workco.png"
+  },
+  {
+    "name": "pentagram",
+    "url": "https://www.google.com/s2/favicons?domain=pentagram.com&sz=128",
+    "website": "https://pentagram.com",
+    "file": "pentagram.png"
+  },
+  {
+    "name": "wolffolins",
+    "url": "https://www.google.com/s2/favicons?domain=wolffolins.com&sz=128",
+    "website": "https://wolffolins.com",
+    "file": "wolffolins.png"
+  },
+  {
+    "name": "huge",
+    "url": "https://www.google.com/s2/favicons?domain=hugeinc.com&sz=128",
+    "website": "https://hugeinc.com",
+    "file": "huge.png"
+  },
+  {
+    "name": "itsnicethat",
+    "url": "https://www.google.com/s2/favicons?domain=itsnicethat.com&sz=128",
+    "website": "https://itsnicethat.com",
+    "file": "itsnicethat.png"
+  },
+  {
+    "name": "creativereview",
+    "url": "https://www.google.com/s2/favicons?domain=creativereview.co.uk&sz=128",
+    "website": "https://creativereview.co.uk",
+    "file": "creativereview.png"
+  },
+  {
+    "name": "dezeen",
+    "url": "https://www.google.com/s2/favicons?domain=dezeen.com&sz=128",
+    "website": "https://dezeen.com",
+    "file": "dezeen.png"
+  }
+]

@@ -51,6 +51,8 @@ export function DimInput({ value, onCommit, min = 16, max = 8192 }: {
 // `is3DMode` drops Safe area and the Background/Logo/Audio sections — 3D
 // and Mockup mode have their own BackgroundFill panel and no overlay concept.
 export default function CanvasPanel({ is3DMode = false }: { is3DMode?: boolean } = {}) {
+  const values = useSceneStore(s => s.values);
+  const setValue = useSceneStore(s => s.setValue);
   const aspect = useSceneStore((s) => s.aspect);
   const activeTemplateId = useSceneStore((s) => s.activeTemplateId);
   const isSocial = !is3DMode && getTemplate(activeTemplateId).meta.kind === 'social';
@@ -110,6 +112,11 @@ export default function CanvasPanel({ is3DMode = false }: { is3DMode?: boolean }
           )}
         </div>
 
+        {!is3DMode && activeTemplateId.startsWith('moonvine-') && <div className="ctl-section">
+          <div className="ctl-section-title">Appearance</div>
+          {getTemplate(activeTemplateId).controls.filter(def => ['fontStyle', 'postTheme'].includes(def.key)).map(def =>
+            <ControlRow key={def.key} def={def} value={values[def.key] ?? def.default} onChange={value => setValue(def.key, value)} />)}
+        </div>}
         {!isSocial && <div className="ctl-section">
           <div className="ctl-section-title">Playback & Framing</div>
           <div className="ctl-row">

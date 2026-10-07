@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import CanvasTextEditor from './CanvasTextEditor';
+import CarouselStage from './CarouselStage';
 import { SceneRenderer } from '@/lib/renderer';
 import type { IRenderer } from '@/lib/rendererTypes';
 import { setRendererInstance } from '@/lib/rendererInstance';
@@ -218,6 +220,6 @@ export default function PreviewStage() {
   }, [width, height]);
 
   return (
-    <div ref={stageRef} className="stage-wrap" />
+    <><CarouselStage><div ref={stageRef} className="stage-wrap" /></CarouselStage><CanvasTextEditor stageRef={stageRef} /></>
   );
 }

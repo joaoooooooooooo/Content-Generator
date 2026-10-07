@@ -1,3 +1,5 @@
+import type { CarouselSlide } from '@/lib/carouselSlides';
+import { migrateBrandValues } from '@/templates/brand-tools/state';
 import { create } from 'zustand';
 import { fixedClipWindows, resizeClip, clipsEnd } from '@/lib/clipTiming';
 import { connectMatchCut, type MatchCut } from '@/lib/matchCut';
@@ -117,6 +119,8 @@ function persistFavorites(ids: string[]) {
 }
 
 export interface SceneState {
+  carouselSlides: CarouselSlide[];
+  activeSlideId: string;
   // ---- motion tracks: stacked motion layers, drawn in array order ----
   // The source of truth for what animates. See lib/tracks.ts.
   tracks: MotionTrack[];
@@ -316,8 +320,8 @@ function withTrack(
   return projectActive(tracks, s.activeTrackId);
 }
 
-const INITIAL_TEMPLATE = 'carousel';
-const initDims = dimsFor('3:4');
+const INITIAL_TEMPLATE = 'moonvine-visibility';
+const initDims = previewDims(1080, 1350);
 
 /**
  * The scene a fresh project starts from. Factored out (rather than inlined into
@@ -348,17 +352,19 @@ function initialSceneState() {
   const tracks = [makeTrack(INITIAL_TEMPLATE, 'Layer 1')];
   return {
     ...projectActive(tracks, tracks[0].id),
+    carouselSlides: [] as CarouselSlide[],
+    activeSlideId: '',
 
     frame: 0,
     fps: 30,
     duration: 8,
-    playing: true, // autoplay loop by default
+    playing: false, // Brand Tools posts are static.
 
-    aspect: '3:4',
+    aspect: 'custom',
     width: initDims.width,
     height: initDims.height,
-    customW: initDims.width,
-    customH: initDims.height,
+    customW: 1080,
+    customH: 1350,
     safeArea: false,
     background: {
       source: 'color' as const,
@@ -388,7 +394,16 @@ export const useSceneStore = create<SceneState>((set, get) => ({
   favoriteTemplateIds: [],
 
   setValue: (key, val) =>
-    set((s) => withTrack(s, s.activeTrackId, { values: { ...s.values, [key]: val } })),
+    set((s) => {
+      let values = { ...s.values, [key]: val };
+      if (!s.activeTemplateId.startsWith('moonvine-')) return withTrack(s, s.activeTrackId, { values });
+      const placementKey = (v: Record<string, any>) => String(v.feature ?? v.animation ?? 'citation');
+      const placements = { ...(s.values._placements ?? {}) };
+      placements[placementKey(s.values)] = { artworkSize: s.values.artworkSize, artworkPosition: s.values.artworkPosition };
+      if (['feature', 'animation'].includes(key)) values = { ...values, ...(placements[placementKey(values)] ?? { artworkSize: 92, artworkPosition: { x: 0, y: 0 } }) };
+      values._placements = placements;
+      return withTrack(s, s.activeTrackId, { values });
+    }),
 
   // full reset on template switch: wipe bag, refill from declared defaults,
   // and seed the track easing from the template's default curve. Only the
@@ -550,8 +565,9 @@ export const useSceneStore = create<SceneState>((set, get) => ({
         });
       return {
         ...layers,
+        ...(id.startsWith('moonvine-') ? { playing: templates[id].meta.kind === 'social-motion' && !(typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) } : {}),
         ...(s.tracks.length <= 1 && templates[id]?.meta.defaultFps ? { fps: templates[id].meta.defaultFps } : {}),
-        ...(templates[id]?.meta.socialSize && (s.tracks.length <= 1 || templates[id]?.meta.group === 'Social') ? {
+        ...(!id.startsWith('moonvine-') && templates[id]?.meta.socialSize && (s.tracks.length <= 1 || templates[id]?.meta.group === 'Social') ? {
           playing: templates[id].meta.kind === 'social-motion', aspect: 'custom',
           customW: templates[id].meta.socialSize?.width ?? 1080,
           customH: templates[id].meta.socialSize?.height ?? 1080,
@@ -921,16 +937,16 @@ export const useSceneStore = create<SceneState>((set, get) => ({
       // current tracks rather than leaving nothing to animate.
       //
       // The check is registry membership, NOT a try/catch around defaultsFor:
-      // getTemplate falls back to carousel for an unknown id, so defaultsFor
+      // getTemplate falls back to the first Brand Tools post for an unknown id, so defaultsFor
       // never throws and a catch would validate nothing. A stale id would then
-      // silently animate as Runway under the wrong name.
+      // silently render another template under the wrong name.
       const tracks = rawTracks
         .filter((t) => typeof t.templateId === 'string' && t.templateId in templates)
         .map((t) => ({
           ...makeTrack(t.templateId, t.name),
           ...t,
           id: t.id || nid('track'),
-          values: { ...defaultsFor(t.templateId), ...(t.values ?? {}) },
+          values: { ...defaultsFor(t.templateId), ...migrateBrandValues(t.templateId, t.values ?? {}) },
           easing: t.easing ?? easingFor(t.templateId),
           transform: { ...DEFAULT_TRACK_TRANSFORM, ...(t.transform ?? {}) },
           assetIds: (t.assetIds ?? []).filter((id) => realAssetIds.has(id)),
@@ -968,6 +984,8 @@ export const useSceneStore = create<SceneState>((set, get) => ({
       return {
         ...s,
         ...partial,
+        carouselSlides: Array.isArray(partial.carouselSlides) ? partial.carouselSlides.filter(slide => slide.templateId in templates) : [],
+        activeSlideId: partial.activeSlideId ?? '',
         background,
         assets,
         // Rebuilt, never inherited: a project saved before the shot existed must
@@ -1040,13 +1058,21 @@ export const useSceneStore = create<SceneState>((set, get) => ({
     set((s) => {
       const p = s.customPresets.find((c) => c.id === id);
       if (!p) return {};
+      const brand = p.templateId.startsWith('moonvine-');
+      const values = { ...defaultsFor(p.templateId), ...migrateBrandValues(p.templateId, p.values) };
+      const playing = getTemplate(p.templateId).meta.kind === 'social-motion' && !(typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+      if (brand && !s.activeTrackId) {
+        const track = makeTrack(p.templateId, p.name, { values, easing: p.easing });
+        return { ...projectActive([track], track.id), playing, frame: 0 };
+      }
       // merge over current defaults so presets survive template control changes
       return {
         ...withTrack(s, s.activeTrackId, {
           templateId: p.templateId,
-          values: { ...defaultsFor(p.templateId), ...p.values },
+          values: { ...defaultsFor(p.templateId), ...migrateBrandValues(p.templateId, p.values) },
           easing: p.easing,
         }),
+        ...(brand ? { playing } : {}),
         // A composition saved WITH a shot brings it back; one saved before the
         // camera existed leaves it alone rather than resetting it to neutral.
         ...(p.sceneCamera ? { sceneCamera: sanitizeSceneCamera(p.sceneCamera) } : {}),

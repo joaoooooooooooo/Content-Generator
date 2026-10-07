@@ -35,5 +35,10 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules", "design", "design-concepts"]
+  "exclude": [
+    "node_modules",
+    "design",
+    "design-concepts",
+    "brand-tools"
+  ]
 }

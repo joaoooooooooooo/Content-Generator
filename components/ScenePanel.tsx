@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { groupPostControls } from '@/lib/postControlGroups';
+import { Fragment, useMemo, useState } from 'react';
 import { useSceneStore } from '@/store/useSceneStore';
 import { catalogTemplateList, getTemplate } from '@/templates';
 import { ControlRow, controlVisible } from './Controls';
@@ -157,9 +158,9 @@ export default function ScenePanel() {
       <div className="section-head"><span className="eyebrow">Post</span><span className="badge">{template.meta.name}</span></div>
       <div className="section-body">{activeTemplateId === 'social-channel-thread' ? <ChannelThreadControls /> : <><div className="ctl-section">
         <div className="ctl-section-title">Post controls</div>
-        {template.controls.filter((def) => controlVisible(def, values) && (activeTemplateId !== 'social-kpi' || (!def.key.includes('.') && def.key !== 'source'))).map((def) => def.type === 'upload'
+        {groupPostControls(template.controls.filter((def) => controlVisible(def, values) && !['fontStyle', 'postTheme'].includes(def.key) && (activeTemplateId !== 'social-kpi' || (!def.key.includes('.') && def.key !== 'source')))).map((group,index) => <Fragment key={group.name}>{index>0 && <div className="hairline post-group-divider" role="separator"/>}{group.controls.map((def) => def.type === 'upload'
           ? <SocialPhotoControl key={def.key} def={def} />
-          : <ControlRow key={def.key} def={def} value={values[def.key] ?? def.default} onChange={(value) => setValue(def.key, value)} />)}
+          : <ControlRow key={def.key} def={def} value={values[def.key] ?? def.default} onChange={(value) => setValue(def.key, value)} />)}</Fragment>)}
       </div>{activeTemplateId === 'social-kpi' && <KpiControls />}</>}</div>
       {template.meta.kind === 'social-motion' && <>
         <div className="hairline" />

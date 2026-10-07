@@ -17,6 +17,7 @@ export interface NavSection {
    * in lib/deployment.ts.
    */
   gated?: boolean;
+  hidden?: boolean;
 }
 
 // Board mode ('board' in NavSectionId, app/(editor)/board/page.tsx,
@@ -33,10 +34,12 @@ export interface NavSection {
 export const NAV_SECTIONS: NavSection[] = [
   { id: 'projects', label: 'Projects', href: '/projects' },
   { id: 'library', label: 'Library', href: '/library' },
-  { id: 'mockup', label: 'Devices', href: '/mockup' },
-  { id: '3d', label: 'OBJ', href: '/3d', gated: true },
-  { id: 'web', label: 'Web', href: '/web', gated: true },
+  { id: 'mockup', label: 'Devices', href: '/mockup', hidden: true },
+  { id: '3d', label: 'OBJ', href: '/3d', gated: true, hidden: true },
+  { id: 'web', label: 'Web', href: '/web', gated: true, hidden: true },
 ];
+
+export const VISIBLE_NAV_SECTIONS = NAV_SECTIONS.filter(section => !section.hidden);
 
 /** What `/` renders, and the fallback for any path we don't recognise. */
 export const DEFAULT_SECTION: NavSectionId = 'library';

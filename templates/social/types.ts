@@ -3,6 +3,8 @@ export type SocialImages = Record<string, HTMLImageElement>;
 export interface SocialArtwork {
   width: number;
   height: number;
+  cacheKey?: (values: SocialValues) => string;
+  prepareImages?: (values: SocialValues) => Promise<SocialImages>;
   fonts?: boolean;
   prepare?: () => Promise<void>;
   optionalImages?: boolean;

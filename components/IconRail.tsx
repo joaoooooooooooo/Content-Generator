@@ -2,16 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { isSectionAvailable, modeForSection, NAV_SECTIONS, sectionFromPathname, type NavSectionId } from '@/lib/navSections';
+import { isSectionAvailable, modeForSection, VISIBLE_NAV_SECTIONS, sectionFromPathname, type NavSectionId } from '@/lib/navSections';
 import LogoMark from '@/components/LogoMark';
 import { useUIStore } from '@/store/useUIStore';
 import { useProjectStore } from '@/store/useProjectStore';
 import { capturePoster } from '@/lib/projectPoster';
 import { preloadMockupProject } from '@/lib/mockupPreload';
-import { IS_HOSTED_DEPLOYMENT, REPO_URL } from '@/lib/deployment';
-import NewsNotifier from './NewsNotifier';
-import UpdateNotifier from './UpdateNotifier';
-import { AddIcon, BoardIcon, DocsIcon, GithubIcon, LibraryIcon, MockupIcon, ProjectsIcon, ThemeGlyph, ThreeDIcon, WebIcon } from './EditorIcons';
+import { REPO_URL } from '@/lib/deployment';
+import { AddIcon, BoardIcon, LibraryIcon, MockupIcon, ProjectsIcon, ThemeGlyph, ThreeDIcon, WebIcon } from './EditorIcons';
 
 const ICONS: Record<NavSectionId, React.ReactNode> = {
   projects: <ProjectsIcon />,
@@ -71,19 +69,13 @@ export default function IconRail() {
   return (
     <aside className="card rail">
       <div className="rail-top">
-        <div className="rail-logo-wrap">
-          <div className="rail-logo">
-            <LogoMark />
-          </div>
-          <span className="beta-tag rail-beta-tag">Beta</span>
-        </div>
         <button className="rail-item rail-action" onClick={newProject} title="Create a new project">
           <span className="rail-ico">
             <AddIcon />
           </span>
           <span className="rail-label">New</span>
         </button>
-        {NAV_SECTIONS.map((n) => (
+        {VISIBLE_NAV_SECTIONS.map((n) => (
           isSectionAvailable(n.id) ? (
             <Link
               key={n.id}
@@ -120,27 +112,6 @@ export default function IconRail() {
         ))}
       </div>
       <div className="rail-bottom">
-        {IS_HOSTED_DEPLOYMENT ? <NewsNotifier /> : <UpdateNotifier />}
-        {/* /docs sits outside the (editor) route group and does NOT mount
-            EditorShell, so opening it drops the Pixi and three contexts instead
-            of keeping a second set alive behind a reader. It is therefore not a
-            section — it stays out of NAV_SECTIONS — and it takes no active
-            state: the docs bring their own chrome, so this rail is not even on
-            screen while you are reading them. */}
-        <Link href="/docs" className="rail-item" title="Documentation">
-          <span className="rail-ico"><DocsIcon /></span>
-          <span className="rail-label">Docs</span>
-        </Link>
-        <a
-          className="rail-item"
-          href={REPO_URL}
-          target="_blank"
-          rel="noreferrer noopener"
-          title="Source on GitHub"
-        >
-          <span className="rail-ico"><GithubIcon /></span>
-          <span className="rail-label">GitHub</span>
-        </a>
         <button
           className="rail-item rail-theme"
           onClick={toggleTheme}

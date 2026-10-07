@@ -1,0 +1,15 @@
+.list-capture { font-family: Geist, sans-serif; color: var(--foreground); width: max-content; }
+.list-check-row { display:flex; align-items:center; gap:18.85px; width:804.279px; min-height:87.968px; padding:12.567px 18.85px; border-radius:25.134px; background:var(--primary-foreground); font-size:43.984px; line-height:1.4286; overflow-wrap:anywhere; }
+.list-check-icon { position:relative; flex:0 0 43.984px; width:43.984px; height:43.984px; }
+.list-check-icon > img:first-child { display:block; }
+.list-check-mark { position:absolute; left:6.03px; top:6.02px; width:31.9387px; height:31.9387px; }
+.list-status-card { width:449.567px; padding:5.877px; border-width:1.469px; border-radius:23.507px; }
+.list-status-top { flex-direction:row; justify-content:space-between; height:65px; padding:12px 11.753px; border-radius:20.568px; }
+.list-status-badge { height:32px; padding:0 8px; gap:5.7px; border:0; border-radius:8px; font-size:20px; line-height:28px; background:color-mix(in srgb, var(--warning) 8%, transparent); }
+.list-status-badge[data-status="good"] { background:color-mix(in srgb, var(--success) 8%, transparent); }
+.list-status-badge img { width:17.6301px; height:17.6301px; }
+.list-status-number { font-size:17.14px; line-height:23px; color:var(--muted-foreground); }
+.list-status-content { flex:initial; padding:29.383px; border-width:1.469px; border-radius:20.568px; font-size:36px; line-height:1.3333; letter-spacing:-.368px; overflow-wrap:anywhere; }
+
+[data-list-text] { display:block; white-space:pre-wrap; width:100%; min-width:0; }
+.list-check-row [data-list-text] { flex:1; }

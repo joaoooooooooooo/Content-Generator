@@ -1,0 +1,92 @@
+[
+  {
+    "value": "visibility",
+    "label": "Visibility",
+    "group": "Charts"
+  },
+  {
+    "value": "source-presence",
+    "label": "Source presence",
+    "group": "Charts"
+  },
+  {
+    "value": "share-of-voice",
+    "label": "Share of voice",
+    "group": "Charts"
+  },
+  {
+    "value": "interactions",
+    "label": "Social interactions",
+    "group": "Charts"
+  },
+  {
+    "value": "rankings",
+    "label": "Citation rankings",
+    "group": "Charts"
+  },
+  {
+    "value": "questions",
+    "label": "Questions asked",
+    "group": "Tables"
+  },
+  {
+    "value": "search",
+    "label": "Search competitors",
+    "group": "Tables"
+  },
+  {
+    "value": "paid",
+    "label": "Paid search",
+    "group": "Tables"
+  },
+  {
+    "value": "audit",
+    "label": "Website audit",
+    "group": "Card grids"
+  },
+  {
+    "value": "scores",
+    "label": "Performance scores",
+    "group": "Card grids"
+  },
+  {
+    "value": "checks",
+    "label": "Website checks",
+    "group": "Card grids"
+  },
+  {
+    "value": "issues",
+    "label": "Audit issues",
+    "group": "Card grids"
+  },
+  {
+    "value": "actions",
+    "label": "Recommendations",
+    "group": "Card grids"
+  },
+  {
+    "value": "social",
+    "label": "Social watch",
+    "group": "Card grids"
+  },
+  {
+    "value": "news",
+    "label": "News",
+    "group": "Card grids"
+  },
+  {
+    "value": "sources",
+    "label": "Report sources",
+    "group": "Card grids"
+  },
+  {
+    "value": "answers",
+    "label": "AI answer metrics",
+    "group": "Card grids"
+  },
+  {
+    "value": "answer-summary",
+    "label": "AI answer summary",
+    "group": "Summaries"
+  }
+]

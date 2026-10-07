@@ -1,8 +1,9 @@
+import { brandTemplates } from './brand-tools';
 import { announceTitle } from './motion-chips/announce-title';
 import { socialTest, socialTestimonial, socialCoverflowRing, socialKpi, socialChannelThread, socialWordGather } from './social';
 import type { Template } from '@/lib/types';
 import { DEFAULT_EASING, type EasingSpec } from '@/lib/easing';
-import { carousel, carouselVariants, carouselRefVariants } from './carousel';
+import { carouselVariants, carouselRefVariants } from './carousel';
 import { wheelVariants } from './wheel';
 import { wheelEllipseVariants } from './wheelEllipse';
 import { arcVariants } from './arc';
@@ -74,6 +75,7 @@ const perspective3dTemplates: Template[] = [
 
 // Order follows the reference catalogue's sidebar.
 export const templateList: Template[] = [
+  ...brandTemplates,
   socialTest,
   socialTestimonial,
   socialCoverflowRing,
@@ -142,11 +144,9 @@ export const templates: Record<string, Template> = Object.fromEntries(
   templateList.map((t) => [t.meta.id, t])
 );
 
-// Templates can remain addressable for persisted scenes while being withheld
-// from every picker until their visual quality is ready for the catalogue.
-const HIDDEN_CATALOG_GROUPS = new Set(['3D & Perspective', 'Dock', 'Editorial', 'Globe', 'Magazine', 'Ripple', 'Sphere']);
+// Keep legacy scenes readable, but expose only Moonvine Brand Tools in all pickers.
 export const catalogTemplateList = templateList.filter(
-  (t) => !t.meta.catalogHidden && !HIDDEN_CATALOG_GROUPS.has(t.meta.group)
+  (t) => t.meta.id.startsWith('moonvine-') && t.meta.id !== 'moonvine-paid'
 );
 
 // Group order follows the reference catalogue.
@@ -167,7 +167,7 @@ export const templateGroups: { group: string; items: Template[] }[] = (() => {
 })();
 
 export function getTemplate(id: string): Template {
-  return templates[id] ?? carousel;
+  return templates[id] ?? brandTemplates[0];
 }
 
 // Build the initial value bag from a template's declared defaults.

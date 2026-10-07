@@ -1,3 +1,4 @@
+import { Agentation } from 'agentation';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
@@ -48,6 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         <SpeedInsights />
         <Analytics />
+          {process.env.NODE_ENV === "development" && <Agentation />}
       </body>
     </html>
   );

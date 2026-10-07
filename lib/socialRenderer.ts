@@ -1,3 +1,4 @@
+import { brandArtwork } from './brandArtwork';
 import { announceTitleArtwork } from '@/templates/motion-chips/announce-title/draw';
 import type { IRenderer } from './rendererTypes';
 import { useSceneStore } from '@/store/useSceneStore';
@@ -11,12 +12,14 @@ import type { SocialArtwork, SocialImages, SocialValues } from '@/templates/soci
 
 const artworks: Record<string, SocialArtwork> = { 'social-test': testArtwork, 'social-testimonial': testimonialArtwork, 'social-channel-thread': channelThreadArtwork, 'social-word-gather': wordGatherArtwork, 'chip-announce-title': announceTitleArtwork };
 export function socialArtwork(id: string): SocialArtwork {
+  if (id.startsWith('moonvine-')) return brandArtwork(id);
   const artwork = artworks[id];
   if (!artwork) throw new Error('Unknown social template: ' + id);
   return artwork;
 }
 export async function prepareSocialArtwork(id: string, values: SocialValues) {
   const artwork = socialArtwork(id);
+  if (artwork.prepareImages) return artwork.prepareImages(values);
   const [, images] = await Promise.all([artwork.prepare?.() ?? (artwork.fonts ? loadSocialFonts() : Promise.resolve()), loadSocialImages(artwork.images(values), artwork.optionalImages)]);
   return images;
 }
@@ -41,6 +44,7 @@ export class SocialRenderer implements IRenderer {
   private canvas!: HTMLCanvasElement;
   private resources: SocialImages = {};
   private readyKey = '';
+  private drawError?: Error;
   private pendingKey = '';
   private pending?: Promise<void>;
   onDirty?: () => void;
@@ -51,7 +55,7 @@ export class SocialRenderer implements IRenderer {
   }
   private key() {
     const s = useSceneStore.getState();
-    return JSON.stringify([s.activeTemplateId, socialArtwork(s.activeTemplateId).images(s.values)]);
+    return JSON.stringify([s.activeTemplateId, socialArtwork(s.activeTemplateId).cacheKey?.(s.values) ?? socialArtwork(s.activeTemplateId).images(s.values)]);
   }
   async prepareFrame() {
     const key = this.key();
@@ -69,7 +73,7 @@ export class SocialRenderer implements IRenderer {
   getFrameState(frame = 0) { this.renderFrame(frame); }
   renderFrame(frame = 0) {
     const s = useSceneStore.getState();
-    if (!artworks[s.activeTemplateId]) return;
+    if (!artworks[s.activeTemplateId] && !s.activeTemplateId.startsWith('moonvine-')) return;
     if (this.key() !== this.readyKey) {
       this.prepareFrame().catch(() => {
         const ctx = this.canvas.getContext('2d');
@@ -80,11 +84,22 @@ export class SocialRenderer implements IRenderer {
       });
       return;
     }
-    drawSocialArtwork(this.canvas, s.activeTemplateId, s.values, this.resources, frame / s.fps);
+    try {
+      drawSocialArtwork(this.canvas, s.activeTemplateId, s.values, this.resources, frame / s.fps);
+      this.drawError = undefined;
+    } catch (cause) {
+      this.drawError = cause instanceof Error ? cause : new Error(String(cause));
+      const ctx = this.canvas.getContext('2d');
+      if (ctx) {
+        ctx.resetTransform(); ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        ctx.fillStyle = '#888'; ctx.font = '16px sans-serif';
+        ctx.fillText(this.drawError.message, 20, 40, Math.max(1, this.canvas.width - 40));
+      }
+    }
   }
-  captureFrame(frame = 0) { this.renderFrame(frame); return this.canvas.toDataURL('image/png'); }
+  captureFrame(frame = 0) { this.renderFrame(frame); return this.extractCanvas().toDataURL('image/png'); }
   setCaptureScale(k: number) { const s = useSceneStore.getState(); this.resize(s.width, s.height, k); }
-  extractCanvas() { return this.canvas; }
+  extractCanvas() { if (this.drawError) throw this.drawError; return this.canvas; }
   syncAssets() { /* Images load together with fonts in prepareFrame. */ }
   destroy() { this.pendingKey = ''; this.readyKey = ''; }
 }

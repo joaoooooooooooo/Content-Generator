@@ -1,4 +1,5 @@
 'use client';
+import { useCanvasTextSelection } from '@/store/useCanvasTextSelection';
 
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
@@ -19,8 +20,9 @@ interface RowProps {
 }
 
 export function ControlRow({ def, value, onChange }: RowProps) {
+  const canvasSelected = useCanvasTextSelection(s => s.key === def.key);
   return (
-    <div className="ctl-row" title={def.description}>
+    <div className="ctl-row" data-canvas-selected={canvasSelected || undefined} title={def.description}>
       <label className="ctl-label">{def.label}</label>
       <div className="ctl-input">{renderControl(def, value, onChange)}</div>
     </div>
@@ -361,6 +363,8 @@ function SliderControl({ def, value, onChange }: RowProps) {
 }
 
 export function controlVisible(def: ControlDef, values: Record<string, any>): boolean {
+  const listItem = /^(?:item|status)(\d+)$/.exec(def.key);
+  if (listItem && values.itemCount != null && Number(listItem[1]) > Number(values.itemCount)) return false;
   const rule = def.visibleWhen;
   if (!rule) return true;
   const current = values[rule.key];
@@ -393,8 +397,8 @@ function PillsControl({ def, value, onChange }: RowProps) {
 
 function SelectControl({ def, value, onChange }: RowProps) {
   return (
-    <select className="field" value={value} onChange={(e) => onChange(e.target.value)}>
-      {(def.options ?? []).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+    <select className="field" aria-label={def.label} value={value} onChange={(e) => onChange(e.target.value)}>
+      {(def.options ?? []).map((opt) => <option key={opt} value={opt}>{def.optionLabels?.[opt] ?? opt}</option>)}
     </select>
   );
 }

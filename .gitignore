@@ -36,3 +36,6 @@ public/demo-ref/
 # Landing page: repositorio git proprio (motion-studio-landing), versionado a parte
 /design/
 /design-concepts/
+
+# Rebuilt from the vendored Brand Tools source before dev/build
+/public/brand-tools/

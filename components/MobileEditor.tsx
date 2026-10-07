@@ -64,7 +64,7 @@ export default function MobileEditor() {
 
   return (
     <MobileInteractionProvider>
-    <div className={`mobile-editor ${panelOpen ? 'mobile-panel-is-open' : 'mobile-panel-is-closed'}`}>
+    <div className={`mobile-editor ${isSocial ? 'mobile-static' : ''} ${panelOpen ? 'mobile-panel-is-open' : 'mobile-panel-is-closed'}`}>
       <header className="mobile-topbar">
         <button className="mobile-project-button" onClick={() => setProjectsOpen(true)} aria-label="Open projects">
           <ProjectsIcon size={18} />
