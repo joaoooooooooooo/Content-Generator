@@ -970,7 +970,8 @@ export function EChartsPieChart<TData extends Record<string, unknown>>({
     repush: () => {},
   }).current;
 
-  const shouldReduceMotion = useReducedMotion();
+  const reducedMotion = useReducedMotion();
+  const shouldReduceMotion = reducedMotion || document.documentElement.dataset.artworkCapture === 'true';
 
   // Selection is controlled when the `selectedSector` prop is provided; otherwise
   // the internal state (seeded by defaultSelectedSector) drives it.

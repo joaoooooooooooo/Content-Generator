@@ -5,7 +5,7 @@ import { renderList } from './list/render-list';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import { toCanvas } from 'html-to-image';
+import { toCanvas, getFontEmbedCSS } from 'html-to-image';
 import { ReportFeature } from './source/features/brand-tools/ReportFeature';
 import { reportFeatures } from './source/features/brand-tools/report-features';
 import { postLogoSources } from './source/features/brand-tools/post-renderer';
@@ -16,7 +16,15 @@ const host = document.getElementById('root');
 const root = createRoot(host);
 const listItems = new Map();
 const reports = new Map(), animations = new Map(), logos = new Map();
-const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+const nextPaint = () => new Promise(resolve => requestAnimationFrame(resolve));
+let fontEmbedCSS;
+async function captureOptions(node) {
+  // The capture document uses one stylesheet/font set for every template.
+  // Reuse embedded fonts rather than fetching and encoding them for every edit.
+  fontEmbedCSS ??= getFontEmbedCSS(node, { preferredFontFormat: 'woff2' }).catch(error => { fontEmbedCSS = undefined; throw error; });
+  return { pixelRatio: 2, fontEmbedCSS: await fontEmbedCSS,
+    includeStyleProperties: [...getComputedStyle(node)].filter(name => !name.startsWith('--')) };
+}
 let captureQueue = Promise.resolve();
 async function loadImage(src) { const img=new Image();img.src=src;await img.decode();return img; }
 function reportImage(feature, theme, scenario) {
@@ -27,9 +35,12 @@ function reportImage(feature, theme, scenario) {
     flushSync(()=>root.render(<div className="report-document font-sans text-foreground" style={{width:feature.width,padding:4}}><ReportFeature value={feature.value} scenario={scenario}/></div>));
     await document.fonts.ready;
     await Promise.all([...host.querySelectorAll('img')].map(img=>img.decode()));
-    await sleep(1800);
+    // Allow effects, chart viewport observers and layout to settle. Charts in
+    // this still-capture document render their final state without entrance animation.
+    await nextPaint();
+    await nextPaint();
     const node=host.firstElementChild;
-    const canvas=await toCanvas(node,{pixelRatio:2,preferredFontFormat:'woff2',includeStyleProperties:[...getComputedStyle(node)].filter(name=>!name.startsWith('--'))});
+    const canvas=await toCanvas(node,await captureOptions(node));
     return {canvas,background:getComputedStyle(document.documentElement).getPropertyValue('--background').trim()};
   });
   captureQueue=capture;
@@ -58,7 +69,7 @@ window.moonvineRenderer = {
           const rect=element.getBoundingClientRect(),style=getComputedStyle(element),fontSize=parseFloat(style.fontSize),textScale=fit*(element.closest('.ai-body')?Number(values.artworkSize??92)/92:1);
           return {key:element.dataset.aiText,x:(rect.x-box.x)/width,y:(rect.y-box.y)/height,width:rect.width/width,height:rect.height/height,fontSize:fontSize*textScale/width,fontFamily:style.fontFamily.includes('Nib')?'Nib Pro':'Geist',fontWeight:Number(style.fontWeight),lineHeight:parseFloat(style.lineHeight)/fontSize,letterSpacing:(parseFloat(style.letterSpacing)||0)*textScale/width,baseline:'dom'};
         });
-        const canvas=await toCanvas(node,{pixelRatio:2,preferredFontFormat:'woff2',includeStyleProperties:[...getComputedStyle(node)].filter(name=>!name.startsWith('--'))});
+        const canvas=await toCanvas(node,await captureOptions(node));
         for(const element of node.querySelectorAll('[data-ai-image]')) {
           const rect=element.getBoundingClientRect();
           regions.push({key:element.dataset.aiImage,kind:'image',x:(rect.x-box.x)/width,y:(rect.y-box.y)/height,width:rect.width/width,height:rect.height/height});
@@ -78,7 +89,7 @@ window.moonvineRenderer = {
           flushSync(()=>root.render(<div className="list-capture"><ListItem variant={values.variant} text={values[`item${i}`]} status={values[`status${i}`]||'Good shape'}/></div>));
           await document.fonts.ready;
           await Promise.all([...host.querySelectorAll('img')].map(img=>img.decode()));
-          const captured=await toCanvas(host.firstElementChild,{pixelRatio:2,preferredFontFormat:'woff2',includeStyleProperties:[...getComputedStyle(host.firstElementChild)].filter(name=>!name.startsWith('--'))});
+          const captured=await toCanvas(host.firstElementChild,await captureOptions(host.firstElementChild));
           const textNode=host.querySelector('[data-list-text]');
           const box=textNode.getBoundingClientRect(), container=host.firstElementChild.getBoundingClientRect(), style=getComputedStyle(textNode);
           captured.textBox={x:box.x-container.x,y:box.y-container.y,width:box.width,height:box.height,fontSize:parseFloat(style.fontSize),lineHeight:parseFloat(style.lineHeight)/parseFloat(style.fontSize),letterSpacing:parseFloat(style.letterSpacing)||0};

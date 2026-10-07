@@ -1,0 +1,25 @@
+const assert = require('node:assert/strict');
+require('sucrase/register');
+const { ArtworkQueue } = require('../lib/artworkQueue');
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+(async () => {
+  const queue = new ArtworkQueue();
+  const order = [];
+  let release;
+  const gate = new Promise(resolve => { release = resolve; });
+  const first = queue.enqueue('running', 'background', async () => { order.push('running'); await gate; });
+  await delay(10);
+  const background = queue.enqueue('preview', 'background', async () => { order.push('preview'); });
+  const promoted = queue.enqueue('selected-preview', 'background', async () => { order.push('selected-preview'); return 42; });
+  queue.promote('selected-preview');
+  const interactive = queue.enqueue('edit', 'interactive', async () => { order.push('edit'); });
+  release();
+  await Promise.all([first, background, promoted, interactive]);
+  assert.deepEqual(order, ['running', 'selected-preview', 'edit', 'preview']);
+  assert.equal(await promoted, 42);
+  const failed = queue.enqueue('failure', 'interactive', async () => { throw new Error('capture failed'); });
+  const recovered = queue.enqueue('next', 'background', async () => 'ok');
+  await assert.rejects(failed, /capture failed/);
+  assert.equal(await recovered, 'ok');
+  console.log('Artwork queue passed: active capture completes safely, selection promotion, interactive priority, returned results, and recovery after failure.');
+})().catch(error => { console.error(error); process.exitCode = 1; });

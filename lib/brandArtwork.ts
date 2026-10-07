@@ -1,3 +1,4 @@
+import { ArtworkQueue } from './artworkQueue';
 import { idbGet } from './assetDb';
 import { SOCIAL_ASSET_PREFIX } from './socialAssets';
 import { useSceneStore } from '@/store/useSceneStore';
@@ -27,6 +28,7 @@ function rendererReady(): Promise<BrandAPI> {
   });
   return ready;
 }
+const preparationQueue = new ArtworkQueue();
 const cache = new Map<string, Promise<SocialImages>>();
 const resources = new WeakMap<SocialImages, { api: BrandAPI; prepared: unknown }>();
 function resourceValues(id: string, values: SocialValues) {
@@ -51,10 +53,11 @@ export function brandArtwork(id: string): SocialArtwork {
     width:1080, height:1350, responsive:true, previewTime:2,
     images:()=>({}),
     cacheKey:values=>JSON.stringify(resourceValues(id,values)),
-    prepareImages:values=>{
+    prepareImages:(values, priority = 'interactive')=>{
       const source=resourceValues(id,values), key=JSON.stringify(source);
-      const existing=cache.get(key);if(existing)return existing;
-      const result=rendererReady().then(async api=>{
+      const existing=cache.get(key);if(existing){if(priority==='interactive')preparationQueue.promote(key);return existing;}
+      const result=preparationQueue.enqueue(key,priority,async()=>{
+        const api=await rendererReady();
         const resolved={...source};
         if(id.startsWith('moonvine-ai-'))await Promise.all(Object.keys(resolved).filter(key=>key.startsWith('sourceIcon')).map(async key=>{
           const ref=String((resolved as SocialValues)[key]??'');

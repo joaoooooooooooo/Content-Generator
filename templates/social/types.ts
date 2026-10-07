@@ -4,7 +4,7 @@ export interface SocialArtwork {
   width: number;
   height: number;
   cacheKey?: (values: SocialValues) => string;
-  prepareImages?: (values: SocialValues) => Promise<SocialImages>;
+  prepareImages?: (values: SocialValues, priority?: import('@/lib/artworkQueue').ArtworkPriority) => Promise<SocialImages>;
   fonts?: boolean;
   prepare?: () => Promise<void>;
   optionalImages?: boolean;

@@ -928,7 +928,8 @@ export function EChartsRadialChart<TData extends Record<string, unknown>>({
     () => (live.loadingRows ??= getLoadingData(LOADING_BARS)),
     [live],
   );
-  const shouldReduceMotion = useReducedMotion();
+  const reducedMotion = useReducedMotion();
+  const shouldReduceMotion = reducedMotion || document.documentElement.dataset.artworkCapture === 'true';
 
   const [selectedBar, setSelectedBar] = useState<string | null>(defaultSelectedDataKey);
 

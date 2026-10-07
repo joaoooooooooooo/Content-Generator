@@ -19,7 +19,7 @@ export default function SocialTemplateThumb({ template }: { template: Template }
         return;
       }
       import('@/lib/socialRenderer').then(async ({ prepareSocialArtwork, drawSocialArtwork, socialArtwork }) => {
-        const images = await prepareSocialArtwork(template.meta.id, values);
+        const images = await prepareSocialArtwork(template.meta.id, values, 'background');
         if (active && canvas.current) drawSocialArtwork(canvas.current, template.meta.id, values, images, socialArtwork(template.meta.id).previewTime);
       }).catch(() => { /* Keep the labelled template card available if its assets cannot load. */ });
     };

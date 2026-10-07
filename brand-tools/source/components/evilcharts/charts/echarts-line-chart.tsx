@@ -1414,7 +1414,8 @@ export function EChartsLineChart<TData extends Record<string, unknown>>({
     () => (live.loadingRows ??= getLoadingData(loadingPoints)),
     [live, loadingPoints],
   );
-  const shouldReduceMotion = useReducedMotion();
+  const reducedMotion = useReducedMotion();
+  const shouldReduceMotion = reducedMotion || document.documentElement.dataset.artworkCapture === 'true';
 
   const [selectedDataKey, setSelectedDataKey] = useState<string | null>(defaultSelectedDataKey);
 

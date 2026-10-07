@@ -1,3 +1,4 @@
+import type { ArtworkPriority } from './artworkQueue';
 import { brandArtwork } from './brandArtwork';
 import { announceTitleArtwork } from '@/templates/motion-chips/announce-title/draw';
 import type { IRenderer } from './rendererTypes';
@@ -17,9 +18,9 @@ export function socialArtwork(id: string): SocialArtwork {
   if (!artwork) throw new Error('Unknown social template: ' + id);
   return artwork;
 }
-export async function prepareSocialArtwork(id: string, values: SocialValues) {
+export async function prepareSocialArtwork(id: string, values: SocialValues, priority: ArtworkPriority = 'interactive') {
   const artwork = socialArtwork(id);
-  if (artwork.prepareImages) return artwork.prepareImages(values);
+  if (artwork.prepareImages) return artwork.prepareImages(values, priority);
   const [, images] = await Promise.all([artwork.prepare?.() ?? (artwork.fonts ? loadSocialFonts() : Promise.resolve()), loadSocialImages(artwork.images(values), artwork.optionalImages)]);
   return images;
 }

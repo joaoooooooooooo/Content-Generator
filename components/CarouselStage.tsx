@@ -9,7 +9,7 @@ import { getTemplate } from '@/templates';
 import { prepareSocialArtwork, drawSocialArtwork, socialArtwork } from '@/lib/socialRenderer';
 function SlidePreview({slide,width,height}:{slide:CarouselSlide;width:number;height:number}) {
   const ref=useRef<HTMLCanvasElement>(null);
-  useEffect(()=>{let alive=true;prepareSocialArtwork(slide.templateId,slide.values).then(images=>{
+  useEffect(()=>{let alive=true;prepareSocialArtwork(slide.templateId,slide.values, 'background').then(images=>{
     if(alive&&ref.current)drawSocialArtwork(ref.current,slide.templateId,slide.values,images,socialArtwork(slide.templateId).previewTime??0);
   }).catch(()=>{});return()=>{alive=false;};},[slide.templateId,slide.values,width,height]);
   return <canvas ref={ref} width={Math.round(width*2)} height={Math.round(height*2)} style={{width,height}}/>;
